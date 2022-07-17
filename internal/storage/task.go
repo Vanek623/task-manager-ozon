@@ -61,3 +61,7 @@ func NewTask(name, description string) (*Task, error) {
 	t.id = lastId
 	return &t, nil
 }
+
+func (t Task) String() string {
+	return fmt.Sprintf("%d: %s ( %s )", t.id, t.name, t.description)
+}
