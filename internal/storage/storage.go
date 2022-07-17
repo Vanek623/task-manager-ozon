@@ -57,22 +57,19 @@ func Delete(id uint) error {
 }
 
 func Get(id uint) (*Task, error) {
-	if t, ok := tasks[id]; ok {
+	if t, ok := tasks[id]; !ok {
+		return nil, makeTaskExistError(false, id)
+	} else {
 		return t, nil
 	}
-
-	return nil, makeTaskExistError(false, id)
 }
-
-var TaskExistError = errors.New("task already exist")
-var TaskNotExistError = errors.New("task doesn't exist")
 
 func makeTaskExistError(isExist bool, id uint) error {
 	var e error
 	if isExist {
-		e = TaskExistError
+		e = errors.New("task already exist")
 	} else {
-		e = TaskNotExistError
+		e = errors.New("task doesn't exist")
 	}
 
 	return errors.Wrap(e, strconv.FormatUint(uint64(id), 10))
