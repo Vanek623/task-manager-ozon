@@ -7,30 +7,23 @@ import (
 	"log"
 )
 
-type CmdHandler func(string) string
-
 type Commander struct {
-	bot    *tgbotapi.BotAPI
-	router map[string]CmdHandler
+	bot *tgbotapi.BotAPI
 }
 
 func Init(token string) (*Commander, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		errors.Wrap(err, "init tgbot")
+		return nil, err
 	}
 
 	bot.Debug = true
 	log.Printf("Authorized on acconut %s", bot.Self.UserName)
 
 	return &Commander{
-		bot:    bot,
-		router: make(map[string]CmdHandler),
+		bot: bot,
 	}, nil
-}
-
-func (c *Commander) AddHandler(cmd string, ch CmdHandler) {
-	c.router[cmd] = ch
 }
 
 func (c *Commander) Run() error {
@@ -45,10 +38,14 @@ func (c *Commander) Run() error {
 
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 		if cmd := update.Message.Command(); cmd != "" {
-			if h, ok := c.router[cmd]; ok {
-				msg.Text = h(update.Message.CommandArguments())
+			if command, comErr := NewCommand(cmd); comErr == nil {
+				if res, exErr := command.Execute(update.Message.CommandArguments()); exErr == nil {
+					msg.Text = res
+				} else {
+					msg.Text = exErr.Error()
+				}
 			} else {
-				msg.Text = "Unknown command"
+				msg.Text = comErr.Error()
 			}
 		} else {
 			log.Printf("[%s] %s", update.Message.From.UserName,

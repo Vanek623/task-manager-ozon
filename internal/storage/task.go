@@ -63,5 +63,9 @@ func NewTask(name, description string) (*Task, error) {
 }
 
 func (t Task) String() string {
-	return fmt.Sprintf("%d: %s ( %s )", t.id, t.name, t.description)
+	if len(t.description) == 0 {
+		return fmt.Sprintf("%d: %s", t.id, t.name)
+	} else {
+		return fmt.Sprintf("%d: %s - %s", t.id, t.name, t.description)
+	}
 }
