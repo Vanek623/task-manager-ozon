@@ -24,25 +24,7 @@ func (c AddCommand) Execute(args string) (string, error) {
 		return "", errors.New("Invalid args")
 	}
 
-	argsArr := make([]string, 0, 2)
-	isBeginFind := false
-	var begId, exprCount int
-	for i, ch := range args {
-		if ch == '"' {
-			if isBeginFind {
-				if begId != i {
-					argsArr = append(argsArr, args[begId:i])
-				} else if exprCount == 0 {
-					return "", errors.New("Task title must be not zero!")
-				}
-
-				exprCount++
-			}
-
-			begId = i + 1
-			isBeginFind = !isBeginFind
-		}
-	}
+	argsArr := extractQuotArgs(args)
 
 	var t *storage.Task
 	var err error
@@ -62,5 +44,5 @@ func (c AddCommand) Execute(args string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("Task %d: \"%s\" added", t.Id(), t.Name()), nil
+	return fmt.Sprintf("Task %d: \"%s\" added", t.Id(), t.Title()), nil
 }

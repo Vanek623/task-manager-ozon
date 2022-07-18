@@ -19,8 +19,9 @@ func (c HelpCommand) Execute(args string) (string, error) {
 
 	commands = append(commands, NewListCommand())
 	commands = append(commands, NewAddCommand())
+	commands = append(commands, NewUpdateCommand())
 
-	out := make([]string, 0, 3)
+	out := make([]string, 0, len(commands)+1)
 	out = append(out, c.Help())
 
 	for _, c := range commands {

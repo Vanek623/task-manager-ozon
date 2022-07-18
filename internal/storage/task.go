@@ -9,7 +9,7 @@ var lastId = uint(0)
 
 type Task struct {
 	id          uint
-	name        string
+	title       string
 	description string
 }
 
@@ -17,8 +17,8 @@ func (t *Task) Id() uint {
 	return t.id
 }
 
-func (t *Task) Name() string {
-	return t.name
+func (t *Task) Title() string {
+	return t.title
 }
 
 func (t *Task) Description() string {
@@ -27,14 +27,14 @@ func (t *Task) Description() string {
 
 var maxNameLen = 64
 
-func (t *Task) SetName(name string) error {
-	if len(name) == 0 {
-		return errors.New("name must be not empty")
-	} else if len(name) > maxNameLen {
-		return errors.New(fmt.Sprintf("Name must be less than %d", maxNameLen))
+func (t *Task) SetTitle(title string) error {
+	if len(title) == 0 {
+		return errors.New("title must be not empty")
+	} else if len(title) > maxNameLen {
+		return errors.New(fmt.Sprintf("Title must be less than %d", maxNameLen))
 	}
 
-	t.name = name
+	t.title = title
 
 	return nil
 }
@@ -49,9 +49,9 @@ func (t *Task) SetDescription(description string) error {
 	return nil
 }
 
-func NewTask(name, description string) (*Task, error) {
+func NewTask(title, description string) (*Task, error) {
 	t := Task{}
-	if err := t.SetName(name); err != nil {
+	if err := t.SetTitle(title); err != nil {
 		return nil, err
 	}
 	if err := t.SetDescription(description); err != nil {
@@ -64,8 +64,8 @@ func NewTask(name, description string) (*Task, error) {
 
 func (t Task) String() string {
 	if len(t.description) == 0 {
-		return fmt.Sprintf("%d: %s", t.id, t.name)
+		return fmt.Sprintf("%d: %s", t.id, t.title)
 	} else {
-		return fmt.Sprintf("%d: %s - %s", t.id, t.name, t.description)
+		return fmt.Sprintf("%d: %s - %s", t.id, t.title, t.description)
 	}
 }

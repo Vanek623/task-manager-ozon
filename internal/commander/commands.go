@@ -12,6 +12,7 @@ func init() {
 	commands["help"] = NewHelpCommand
 	commands["list"] = NewListCommand
 	commands["add"] = NewAddCommand
+	commands["update"] = NewUpdateCommand
 }
 
 type ICommand interface {
