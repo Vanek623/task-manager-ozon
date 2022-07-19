@@ -8,67 +8,45 @@ import (
 )
 
 type UpdateCommand struct {
-	bc baseCommand
+	bc Command
 }
 
 func NewUpdateCommand() ICommand {
-	return UpdateCommand{baseCommand{"update", "edit task", "<id> <title> <description>"}}
+	return UpdateCommand{Command{UPDATE_NAME, "edit task", "<id> <title> <description>"}}
 }
 
 func (c UpdateCommand) Help() string {
-	return c.bc.help()
+	return c.bc.Help()
 }
 
 func (c UpdateCommand) Execute(args string) (string, error) {
-	id, err := extractUint(args)
+	argsArr, err := extractArgs(args)
 	if err != nil {
 		return "", err
+	}
+
+	if len(argsArr) < 2 {
+		return "", errors.New("Has no enough args")
 	}
 
 	var t *storage.Task
-	t, err = storage.Get(id)
-	if err != nil {
+	if id, err := strconv.ParseUint(argsArr[0], 10, 64); err != nil {
+		return "", err
+	} else if t, err = storage.Get(uint(id)); err != nil {
 		return "", err
 	}
 
-	argsArr := extractQuotArgs(args)
-	if len(argsArr) == 0 {
-		return "", errors.New("Title must be not empty")
-	}
-
-	if err = t.SetTitle(argsArr[0]); err != nil {
+	if err = t.SetTitle(argsArr[1]); err != nil {
 		return "", err
-	}
-
-	if len(argsArr) >= 2 {
-		if err = t.SetDescription(argsArr[1]); err != nil {
+	} else if len(argsArr) > 2 {
+		if err = t.SetDescription(argsArr[2]); err != nil {
 			return "", err
 		}
 	}
 
-	return fmt.Sprintf("Task %d: %s updated", t.Id(), t.Title()), err
-}
-
-func extractUint(s string) (uint, error) {
-	begId := len(s)
-	endId := len(s)
-	for i, ch := range s {
-		isChar := ch >= '0' && ch <= '9'
-		if isChar && begId == len(s) {
-			begId = i
-		} else if !isChar && begId != len(s) {
-			endId = i
-			break
-		}
+	if err = storage.Update(t); err != nil {
+		return "", err
 	}
 
-	if begId >= len(s) {
-		return 0, errors.New(fmt.Sprintf("Cannot parse <%s>", s))
-	}
-
-	if num, err := strconv.ParseUint(s[begId:endId], 10, 64); err == nil {
-		return uint(num), nil
-	} else {
-		return 0, err
-	}
+	return fmt.Sprintf("Task %d: %s updated", t.Id(), t.Title()), nil
 }

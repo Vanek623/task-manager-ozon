@@ -8,6 +8,8 @@ import (
 
 var tasks map[uint]*Task
 
+const maxTasks = 8
+
 func init() {
 	tasks = make(map[uint]*Task)
 
@@ -30,6 +32,9 @@ func Tasks() []*Task {
 }
 
 func Add(t *Task) error {
+	if len(tasks) >= maxTasks {
+		return errors.New("Has no space for tasks, please delete one")
+	}
 	if _, ok := tasks[t.Id()]; ok {
 		return makeTaskExistError(true, t.Id())
 	}

@@ -6,14 +6,18 @@ import (
 	"strings"
 )
 
-type baseCommand struct {
+type Command struct {
 	Name        string
 	Description string
 	SubArgs     string
 }
 
-func (c baseCommand) help() string {
+func (c Command) Help() string {
 	return fmt.Sprintf("/%s %s - %s", c.Name, c.SubArgs, c.Description)
+}
+
+func (c Command) Execute(args string) (string, error) {
+	return "", errors.New("Command doesn't work")
 }
 
 func extractArgs(args string) ([]string, error) {

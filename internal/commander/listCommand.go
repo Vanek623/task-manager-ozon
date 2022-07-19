@@ -6,15 +6,15 @@ import (
 )
 
 type ListCommand struct {
-	bc baseCommand
+	bc Command
 }
 
 func NewListCommand() ICommand {
-	return ListCommand{baseCommand{"list", "tasks list", ""}}
+	return ListCommand{Command{LIST_NAME, "tasks list", ""}}
 }
 
 func (c ListCommand) Help() string {
-	return c.bc.help()
+	return c.bc.Help()
 }
 
 func (c ListCommand) Execute(args string) (string, error) {

@@ -2,45 +2,41 @@ package commander
 
 import (
 	"TaskAlertBot/internal/storage"
+	"errors"
 	"fmt"
-	"github.com/pkg/errors"
 )
 
 type AddCommand struct {
-	bc baseCommand
+	bc Command
 }
 
 func NewAddCommand() ICommand {
-	return AddCommand{baseCommand{"add", "add new task", "<title> <description>"}}
+	return AddCommand{Command{ADD_NAME, "add new task", "<title> <description>"}}
 }
 
 func (c AddCommand) Help() string {
-	return c.bc.help()
+	return c.bc.Help()
 }
 
 func (c AddCommand) Execute(args string) (string, error) {
-	fmt.Println("exec add")
-	if len(args) == 0 {
-		return "", errors.New("Invalid args")
-	}
-
-	argsArr := extractQuotArgs(args)
-
 	var t *storage.Task
-	var err error
-	if len(argsArr) == 0 {
-		t, err = nil, errors.New("Invalid arguments!")
+	if argsArr, err := extractArgs(args); err != nil || len(argsArr) == 0 {
+		if err != nil {
+			return "", err
+		} else {
+			return "", errors.New("has no enough args")
+		}
 	} else if len(argsArr) == 1 {
-		t, err = storage.NewTask(argsArr[0], "")
-	} else {
-		t, err = storage.NewTask(argsArr[0], argsArr[1])
+		if t, err = storage.NewTask(argsArr[0], ""); err != nil {
+			return "", err
+		}
+	} else if len(argsArr) == 2 {
+		if t, err = storage.NewTask(argsArr[0], argsArr[1]); err != nil {
+			return "", err
+		}
 	}
 
-	if err != nil {
-		return "", err
-	}
-
-	if err = storage.Add(t); err != nil {
+	if err := storage.Add(t); err != nil {
 		return "", err
 	}
 

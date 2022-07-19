@@ -3,15 +3,15 @@ package commander
 import "strings"
 
 type HelpCommand struct {
-	bc baseCommand
+	bc Command
 }
 
 func NewHelpCommand() ICommand {
-	return HelpCommand{baseCommand{"help", "commands list", ""}}
+	return HelpCommand{Command{HELP_NAME, "commands list", ""}}
 }
 
 func (c HelpCommand) Help() string {
-	return c.bc.help()
+	return c.bc.Help()
 }
 
 func (c HelpCommand) Execute(args string) (string, error) {
@@ -20,6 +20,8 @@ func (c HelpCommand) Execute(args string) (string, error) {
 	commands = append(commands, NewListCommand())
 	commands = append(commands, NewAddCommand())
 	commands = append(commands, NewUpdateCommand())
+	commands = append(commands, NewDeleteCommand())
+	commands = append(commands, NewGetCommand())
 
 	out := make([]string, 0, len(commands)+1)
 	out = append(out, c.Help())
