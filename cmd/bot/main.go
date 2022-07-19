@@ -28,12 +28,26 @@ func runBot() {
 	}
 }
 
+//func parseTest() {
+//	parseFunc := func(s string) {
+//		if r, e := commander.ExtractArgs(s); e != nil {
+//			fmt.Println(e.Error())
+//		} else {
+//			fmt.Println(s, ":", r, "(", len(r), ")")
+//		}
+//	}
+//
+//	parseFunc("")
+//	parseFunc("bob")
+//	parseFunc("bob lol")
+//	parseFunc(`"bob" lol`)
+//	parseFunc(`lol "bob"`)
+//	parseFunc(`"bob" "fof" lel`)
+//	parseFunc(`bob "lol kek" mob`)
+//}
+
 func testFeatures() {
-	s, e := commander.AddCommand{}.Execute(`"a"`)
-	if e != nil {
-		fmt.Println(e.Error())
-	}
-	fmt.Println(s)
+
 }
 
 func main() {
