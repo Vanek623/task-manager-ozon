@@ -22,6 +22,7 @@ func (c HelpCommand) Execute(args string) (string, error) {
 	commands = append(commands, NewUpdateCommand())
 	commands = append(commands, NewDeleteCommand())
 	commands = append(commands, NewGetCommand())
+	commands = append(commands, NewStartCommand())
 
 	out := make([]string, 0, len(commands)+1)
 	out = append(out, c.Help())

@@ -31,7 +31,7 @@ func (t *Task) Description() string {
 	return t.description
 }
 
-var maxNameLen = 64
+const maxNameLen = 64
 
 func (t *Task) SetTitle(title string) error {
 	if len(title) == 0 {
