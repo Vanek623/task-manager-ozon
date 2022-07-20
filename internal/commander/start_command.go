@@ -1,17 +1,10 @@
 package commander
 
-type StartCommand struct {
-	bc Command
-}
+import "fmt"
 
-func (c StartCommand) Help() string {
-	return c.bc.Help()
-}
-
-func (c StartCommand) Execute(args string) (string, error) {
-	return "Hello, user!", nil
-}
-
-func NewStartCommand() ICommand {
-	return StartCommand{Command{START_COMMAND, "get hello message", ""}}
+func NewStartCommand() Command {
+	return Command{"start", "get hello message", "",
+		func(args string) (string, error) {
+			return fmt.Sprintf("Hello %s!", args), nil
+		}}
 }

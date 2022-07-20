@@ -1,56 +1,31 @@
 package main
 
 import (
-	"TaskAlertBot/internal/commander"
 	"fmt"
 	"github.com/joho/godotenv"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/commander"
 	"log"
 	"os"
 )
 
-func runBot() {
-	godotenv.Load()
-
-	token := os.Getenv("BOT_TOKEN")
-	if len(token) == 0 {
+func main() {
+	var token string
+	err := godotenv.Load()
+	if err != nil {
 		fmt.Print("Token missing in .env! Enter token: ")
-		fmt.Scan(&token)
+		if _, err := fmt.Scan(&token); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		token = os.Getenv("BOT_TOKEN")
 	}
 
 	cmdr, err := commander.Init(token)
 	if err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
 
-	err = cmdr.Run()
-	if err != nil {
-		log.Panic(err)
+	if err = cmdr.Run(); err != nil {
+		log.Fatal(err)
 	}
-}
-
-//func parseTest() {
-//	parseFunc := func(s string) {
-//		if r, e := commander.ExtractArgs(s); e != nil {
-//			fmt.Println(e.Error())
-//		} else {
-//			fmt.Println(s, ":", r, "(", len(r), ")")
-//		}
-//	}
-//
-//	parseFunc("")
-//	parseFunc("bob")
-//	parseFunc("bob lol")
-//	parseFunc(`"bob" lol`)
-//	parseFunc(`lol "bob"`)
-//	parseFunc(`"bob" "fof" lel`)
-//	parseFunc(`bob "lol kek" mob`)
-//}
-
-func testFeatures() {
-
-}
-
-func main() {
-	//testFeatures()
-	runBot()
 }

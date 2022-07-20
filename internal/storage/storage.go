@@ -35,20 +35,20 @@ func Add(t *Task) error {
 	if len(tasks) >= maxTasks {
 		return errors.New("Has no space for tasks, please delete one")
 	}
-	if _, ok := tasks[t.Id()]; ok {
-		return makeTaskExistError(true, t.Id())
+	if _, ok := tasks[t.ID()]; ok {
+		return makeTaskExistError(true, t.ID())
 	}
 
-	tasks[t.Id()] = t
+	tasks[t.ID()] = t
 	return nil
 }
 
 func Update(t *Task) error {
-	if _, ok := tasks[t.Id()]; !ok {
-		return makeTaskExistError(false, t.Id())
+	if _, ok := tasks[t.ID()]; !ok {
+		return makeTaskExistError(false, t.ID())
 	}
 
-	tasks[t.Id()] = t
+	tasks[t.ID()] = t
 	return nil
 }
 

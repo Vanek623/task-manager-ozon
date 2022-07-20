@@ -7,26 +7,29 @@ import (
 	"time"
 )
 
-type GetCommand struct {
-	bc Command
-}
+func NewGetCommand() Command {
+	return Command{"get", "getting task", "<id>",
+		func(args string) (string, error) {
+			argsArr, err := extractArgs(args)
+			if err != nil {
+				return "", err
+			} else if len(argsArr) == 0 {
+				return "", hasNoEnoughArgs
+			}
 
-func (c GetCommand) Help() string {
-	return c.bc.Help()
-}
+			id, err := strconv.ParseUint(argsArr[0], 10, 64)
+			if err != nil {
+				return "", err
+			}
 
-func (c GetCommand) Execute(args string) (string, error) {
-	if argsArr, err := extractArgs(args); err != nil {
-		return "", err
-	} else if id, err := strconv.ParseUint(argsArr[0], 10, 64); err != nil {
-		return "", err
-	} else if t, err := storage.Get(uint(id)); err != nil {
-		return "", err
-	} else {
-		return fmt.Sprintf("Title: %s \nDescription: %s \nCreated: %s", t.Title(), t.Description(), t.Created().Format(time.Stamp)), err
-	}
-}
+			t, err := storage.Get(uint(id))
+			if err != nil {
+				return "", err
+			}
 
-func NewGetCommand() ICommand {
-	return GetCommand{Command{GET_NAME, "getting task", "<id>"}}
+			return fmt.Sprintf("Title: %s \nDescription: %s \nCreated: %s",
+				t.Title(),
+				t.Description(),
+				t.Created().Format(time.Stamp)), nil
+		}}
 }

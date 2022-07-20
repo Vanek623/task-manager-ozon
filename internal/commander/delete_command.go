@@ -6,26 +6,25 @@ import (
 	"strconv"
 )
 
-type DeleteCommand struct {
-	bc Command
-}
+func NewDeleteCommand() Command {
+	return Command{"delete", "delete task", "<id>",
+		func(args string) (string, error) {
+			argsArr, err := extractArgs(args)
+			if err != nil {
+				return "", err
+			} else if len(argsArr) == 0 {
+				return "", hasNoEnoughArgs
+			}
 
-func (c DeleteCommand) Help() string {
-	return c.bc.Help()
-}
+			id, err := strconv.ParseUint(argsArr[0], 10, 64)
+			if err != nil {
+				return "", err
+			}
 
-func (c DeleteCommand) Execute(args string) (string, error) {
-	if argsArr, err := extractArgs(args); err != nil {
-		return "", err
-	} else if id, err := strconv.ParseUint(argsArr[0], 10, 64); err != nil {
-		return "", err
-	} else if err = storage.Delete(uint(id)); err != nil {
-		return "", err
-	} else {
-		return fmt.Sprintf("Task %s deleted", argsArr[0]), nil
-	}
-}
+			if err = storage.Delete(uint(id)); err != nil {
+				return "", err
+			}
 
-func NewDeleteCommand() ICommand {
-	return DeleteCommand{Command{DELETE_NAME, "delete task", "<id>"}}
+			return fmt.Sprintf("Task %s deleted", argsArr[0]), nil
+		}}
 }

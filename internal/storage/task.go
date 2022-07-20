@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-var lastId = uint(0)
+var lastID = uint(0)
 
 type Task struct {
-	id          uint
+	taskID      uint
 	title       string
 	description string
 	created     time.Time
@@ -19,8 +19,8 @@ func (t *Task) Created() time.Time {
 	return t.created
 }
 
-func (t *Task) Id() uint {
-	return t.id
+func (t *Task) ID() uint {
+	return t.taskID
 }
 
 func (t *Task) Title() string {
@@ -65,11 +65,11 @@ func NewTask(title, description string) (*Task, error) {
 	}
 	t.created = time.Now()
 
-	lastId++
-	t.id = lastId
+	lastID++
+	t.taskID = lastID
 	return &t, nil
 }
 
 func (t Task) String() string {
-	return fmt.Sprintf("%d: %s", t.id, t.title)
+	return fmt.Sprintf("%d: %s", t.taskID, t.title)
 }

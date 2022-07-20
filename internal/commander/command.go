@@ -10,15 +10,15 @@ type Command struct {
 	Name        string
 	Description string
 	SubArgs     string
+
+	Execute func(string) (string, error)
 }
 
 func (c Command) Help() string {
 	return fmt.Sprintf("/%s %s - %s", c.Name, c.SubArgs, c.Description)
 }
 
-func (c Command) Execute(args string) (string, error) {
-	return "", errors.New("Command doesn't work")
-}
+var hasNoEnoughArgs = errors.New("has no enough arguments")
 
 func extractArgs(args string) ([]string, error) {
 	var out []string

@@ -1,4 +1,4 @@
-module TaskAlertBot
+module gitlab.ozon.dev/Vanek623/task-manager-system
 
 go 1.18
 
