@@ -1,9 +1,9 @@
 package commander
 
 import (
-	"TaskAlertBot/internal/storage"
 	"fmt"
 	"github.com/pkg/errors"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/storage"
 	"strconv"
 )
 
@@ -48,5 +48,5 @@ func (c UpdateCommand) Execute(args string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("Task %d: %s updated", t.Id(), t.Title()), nil
+	return fmt.Sprintf("Task %d: %s updated", t.ID(), t.Title()), nil
 }

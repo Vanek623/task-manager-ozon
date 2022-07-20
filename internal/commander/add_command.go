@@ -1,9 +1,9 @@
 package commander
 
 import (
-	"TaskAlertBot/internal/storage"
 	"errors"
 	"fmt"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/storage"
 )
 
 type AddCommand struct {
@@ -40,5 +40,5 @@ func (c AddCommand) Execute(args string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("Task %d: \"%s\" added", t.Id(), t.Title()), nil
+	return fmt.Sprintf("Task %d: \"%s\" added", t.ID(), t.Title()), nil
 }

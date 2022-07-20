@@ -1,8 +1,8 @@
 package commander
 
 import (
-	"TaskAlertBot/internal/storage"
 	"fmt"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/storage"
 	"strconv"
 	"time"
 )
