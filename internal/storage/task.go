@@ -1,13 +1,16 @@
 package storage
 
 import (
-	"errors"
 	"fmt"
 	"time"
+	"unicode/utf8"
+
+	"github.com/pkg/errors"
 )
 
 var lastID = uint(0)
 
+// Task структура для хранения задачи
 type Task struct {
 	taskID      uint
 	title       string
@@ -15,29 +18,35 @@ type Task struct {
 	created     time.Time
 }
 
+// Created чтение времени создания задачи
 func (t *Task) Created() time.Time {
 	return t.created
 }
 
+// ID чтение идентификатора задачи
 func (t *Task) ID() uint {
 	return t.taskID
 }
 
+// Title чтение названия задачи
 func (t *Task) Title() string {
 	return t.title
 }
 
+// Description чтение описания задачи
 func (t *Task) Description() string {
 	return t.description
 }
 
 const maxNameLen = 64
 
+// SetTitle установка названия задачи
 func (t *Task) SetTitle(title string) error {
-	if len(title) == 0 {
+	if title == "" {
 		return errors.New("title must be not empty")
-	} else if len(title) > maxNameLen {
-		return errors.New(fmt.Sprintf("Title must be less than %d", maxNameLen))
+	}
+	if utf8.RuneCountInString(title) > maxNameLen {
+		return errors.Errorf("title must be less than %d", maxNameLen)
 	}
 
 	t.title = title
@@ -45,9 +54,12 @@ func (t *Task) SetTitle(title string) error {
 	return nil
 }
 
+const maxDescriptionLen = 256
+
+// SetDescription установка описания задачи
 func (t *Task) SetDescription(description string) error {
-	if len(description) > 256 {
-		return errors.New("description too large")
+	if utf8.RuneCountInString(description) > maxDescriptionLen {
+		return errors.Errorf("description must be less than %d", maxDescriptionLen)
 	}
 
 	t.description = description
@@ -55,6 +67,7 @@ func (t *Task) SetDescription(description string) error {
 	return nil
 }
 
+// NewTask Создание задачи
 func NewTask(title, description string) (*Task, error) {
 	t := Task{}
 	if err := t.SetTitle(title); err != nil {

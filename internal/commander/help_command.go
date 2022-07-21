@@ -6,13 +6,13 @@ import (
 
 var helpList []string
 
-func NewHelpCommand(commands map[string]Command) Command {
+func newHelpCommand(commands map[string]command) command {
 	helpList = make([]string, 0, len(commands))
 	for _, s := range commands {
 		helpList = append(helpList, s.Help())
 	}
 
-	tmp := Command{Name: "help", Description: "commands list"}
+	tmp := command{name: "help", description: "commands list"}
 	helpList = append(helpList, tmp.Help())
 
 	tmp.Execute = func(args string) (string, error) {

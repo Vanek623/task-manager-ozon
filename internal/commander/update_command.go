@@ -2,13 +2,14 @@ package commander
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/pkg/errors"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/storage"
-	"strconv"
 )
 
-func NewUpdateCommand() Command {
-	return Command{"update", "edit task", "<id> <title> <description>",
+func newUpdateCommand() command {
+	return command{"update", "edit task", "<id> \"title\" \"description\">",
 		func(args string) (string, error) {
 			argsArr, err := extractArgs(args)
 			if err != nil {

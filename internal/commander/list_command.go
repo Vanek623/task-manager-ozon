@@ -1,12 +1,13 @@
 package commander
 
 import (
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/storage"
 	"strings"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/storage"
 )
 
-func NewListCommand() Command {
-	return Command{"list", "tasks list", "",
+func newListCommand() command {
+	return command{"list", "tasks list", "",
 		func(args string) (string, error) {
 			tasks := storage.Tasks()
 

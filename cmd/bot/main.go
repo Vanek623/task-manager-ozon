@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/commander"
 	"log"
 	"os"
+
+	"github.com/joho/godotenv"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/commander"
 )
 
 func main() {

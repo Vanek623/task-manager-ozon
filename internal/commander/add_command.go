@@ -2,11 +2,12 @@ package commander
 
 import (
 	"fmt"
+
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/storage"
 )
 
-func NewAddCommand() Command {
-	return Command{"add", "add new task", "<title> <description>",
+func newAddCommand() command {
+	return command{"add", "add new task", "\"title\" \"description\"",
 		func(args string) (string, error) {
 			argsArr, err := extractArgs(args)
 			if err != nil {

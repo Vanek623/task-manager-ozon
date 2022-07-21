@@ -2,13 +2,14 @@ package commander
 
 import (
 	"fmt"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/storage"
 	"strconv"
 	"time"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/storage"
 )
 
-func NewGetCommand() Command {
-	return Command{"get", "getting task", "<id>",
+func newGetCommand() command {
+	return command{"get", "getting task", "<id>",
 		func(args string) (string, error) {
 			argsArr, err := extractArgs(args)
 			if err != nil {

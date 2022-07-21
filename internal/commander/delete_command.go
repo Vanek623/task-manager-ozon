@@ -2,12 +2,13 @@ package commander
 
 import (
 	"fmt"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/storage"
 	"strconv"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/storage"
 )
 
-func NewDeleteCommand() Command {
-	return Command{"delete", "delete task", "<id>",
+func newDeleteCommand() command {
+	return command{"delete", "delete task", "<id>",
 		func(args string) (string, error) {
 			argsArr, err := extractArgs(args)
 			if err != nil {

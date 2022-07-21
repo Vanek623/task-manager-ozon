@@ -2,20 +2,21 @@ package commander
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"strings"
+
+	"github.com/pkg/errors"
 )
 
-type Command struct {
-	Name        string
-	Description string
-	SubArgs     string
+type command struct {
+	name        string
+	description string
+	subArgs     string
 
 	Execute func(string) (string, error)
 }
 
-func (c Command) Help() string {
-	return fmt.Sprintf("/%s %s - %s", c.Name, c.SubArgs, c.Description)
+func (c *command) Help() string {
+	return fmt.Sprintf("/%s %s - %s", c.name, c.subArgs, c.description)
 }
 
 var hasNoEnoughArgs = errors.New("has no enough arguments")
