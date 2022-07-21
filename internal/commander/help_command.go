@@ -4,19 +4,21 @@ import (
 	"strings"
 )
 
-var helpList []string
+var helpList string
 
 func newHelpCommand(commands map[string]command) command {
-	helpList = make([]string, 0, len(commands))
+	helpArr := make([]string, 0, len(commands))
 	for _, s := range commands {
-		helpList = append(helpList, s.Help())
+		helpArr = append(helpArr, s.Help())
 	}
 
 	tmp := command{name: "help", description: "commands list"}
-	helpList = append(helpList, tmp.Help())
+	helpArr = append(helpArr, tmp.Help())
+
+	helpList = strings.Join(helpArr, "\n")
 
 	tmp.Execute = func(args string) (string, error) {
-		return strings.Join(helpList, "\n"), nil
+		return helpList, nil
 	}
 
 	return tmp

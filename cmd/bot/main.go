@@ -11,10 +11,9 @@ import (
 
 func main() {
 	var token string
-	err := godotenv.Load()
-	if err != nil {
+	if err := godotenv.Load(); err != nil {
 		fmt.Print("Token missing in .env! Enter token: ")
-		if _, err := fmt.Scan(&token); err != nil {
+		if _, err = fmt.Scan(&token); err != nil {
 			log.Fatal(err)
 		}
 	} else {
