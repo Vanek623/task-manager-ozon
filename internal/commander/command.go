@@ -19,7 +19,7 @@ func (c *command) Help() string {
 	return fmt.Sprintf("/%s %s - %s", c.name, c.subArgs, c.description)
 }
 
-var hasNoEnoughArgs = errors.New("has no enough arguments")
+var errNoEnoughArgs = errors.New("has no enough arguments")
 
 func extractArgs(args string) ([]string, error) {
 	var out []string
@@ -33,7 +33,7 @@ func extractArgs(args string) ([]string, error) {
 		if args[0] == '"' {
 			subargs = strings.SplitAfterN(args[1:], "\"", 2)
 			if len(subargs) != 2 {
-				return nil, errors.New(fmt.Sprintf("Cannot parse %s", args))
+				return nil, errors.Errorf("Cannot parse %s", args)
 			}
 		} else {
 			subargs = strings.SplitAfterN(args, " ", 2)

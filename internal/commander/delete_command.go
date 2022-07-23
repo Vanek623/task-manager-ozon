@@ -14,7 +14,7 @@ func newDeleteCommand() command {
 			if err != nil {
 				return "", err
 			} else if len(argsArr) == 0 {
-				return "", hasNoEnoughArgs
+				return "", errNoEnoughArgs
 			}
 
 			id, err := strconv.ParseUint(argsArr[0], 10, 64)

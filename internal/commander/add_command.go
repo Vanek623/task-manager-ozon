@@ -17,7 +17,7 @@ func newAddCommand() command {
 			var t *storage.Task
 			switch len(argsArr) {
 			case 0:
-				return "", hasNoEnoughArgs
+				return "", errNoEnoughArgs
 			case 1:
 				if t, err = storage.NewTask(argsArr[0], ""); err != nil {
 					return "", err
