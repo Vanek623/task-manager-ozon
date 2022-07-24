@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package ozon.dev.tms.api;
+option go_package = "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api;api";
+
+/// ---------------------------------------------------------------------------------------------------------------------
+// TaskCreate endpoint messages
+// ---------------------------------------------------------------------------------------------------------------------
+
+message TaskCreateRequest {
+  uint64 ID = 1;
+  string title = 2;
+  string description = 3;
+  uint64 tm = 4;
+}
+message TaskCreateResponse {}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// TaskList endpoint messages
+// ---------------------------------------------------------------------------------------------------------------------
+
+message TaskListRequest {}
+message TaskListResponse {
+  repeated Task tasks = 1;
+
+  message Task {
+    uint64 ID = 1;
+    string name = 2;
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// TaskUpdate endpoint messages
+// ---------------------------------------------------------------------------------------------------------------------
+
+message TaskUpdateRequest {
+  uint64 ID = 1;
+  string title = 2;
+  string description = 3;
+  uint64 tm = 4;
+}
+message TaskUpdateResponse {}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// TaskDelete endpoint messages
+// ---------------------------------------------------------------------------------------------------------------------
+
+message TaskDeleteRequest {
+  uint64 ID = 1;
+}
+message TaskDeleteResponse {}
