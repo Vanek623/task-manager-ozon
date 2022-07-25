@@ -12,7 +12,11 @@ run-in-docker: build
 .PHONY: build
 build:
 	go mod download && CGO_ENABLED=0  go build \
-		-o ./bin/main$(shell go env GOEXE) ./cmd/main.go
+		-o ./bin/main$(shell go env GOEXE) ./cmd/bot/main.go
+
+.PHONY: run
+run:
+	go run ./cmd/bot/main.go
 
 # precommit jobs
 .PHONY: precommit
