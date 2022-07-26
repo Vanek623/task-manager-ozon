@@ -2,10 +2,10 @@ package commander
 
 import (
 	"fmt"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/storage"
 	"strconv"
 
 	"github.com/pkg/errors"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/storage"
 )
 
 func newUpdateCommand() command {

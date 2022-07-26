@@ -1,9 +1,8 @@
 package commander
 
 import (
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/storage"
 	"strings"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/storage"
 )
 
 func newListCommand() command {

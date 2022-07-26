@@ -2,14 +2,12 @@ package commander
 
 import (
 	"fmt"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/storage"
 	"strconv"
-	"time"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/storage"
 )
 
-func newGetCommand() command {
-	return command{"get", "getting task", "<id>",
+func newDeleteCommand() command {
+	return command{"delete", "delete task", "<id>",
 		func(args string) (string, error) {
 			argsArr, err := extractArgs(args)
 			if err != nil {
@@ -23,14 +21,10 @@ func newGetCommand() command {
 				return "", err
 			}
 
-			t, err := storage.Get(uint(id))
-			if err != nil {
+			if err = storage.Delete(uint(id)); err != nil {
 				return "", err
 			}
 
-			return fmt.Sprintf("Title: %s \nDescription: %s \nCreated: %s",
-				t.Title(),
-				t.Description(),
-				t.Created().Format(time.Stamp)), nil
+			return fmt.Sprintf("Task %s deleted", argsArr[0]), nil
 		}}
 }
