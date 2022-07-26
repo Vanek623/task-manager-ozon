@@ -8,22 +8,26 @@ import (
 	"unicode/utf8"
 )
 
+// ITask интерфейс управления задачами
 type ITask interface {
-	Create(task *models.Task) error
-	Update(task *models.Task) error
+	Create(task models.Task) error
+	Update(task models.Task) error
 	Delete(ID uint) error
-	List() []*models.Task
-	Get(ID uint)
+	List() []models.Task
+	Get(ID uint) (models.Task, error)
 }
 
+// Core Структура
 type Core struct {
 	cache cache.ICache
 }
 
-// New Создание задачи
-func New() *Core {
-	return &Core{
-		cache: local.New(),
+// New Создание модуля управления задачами
+func New() Core {
+	tmp := local.New()
+
+	return Core{
+		cache: &tmp,
 	}
 }
 
@@ -79,4 +83,8 @@ func (c *Core) Delete(ID uint) error {
 
 func (c *Core) List() []models.Task {
 	return c.cache.List()
+}
+
+func (c *Core) Get(ID uint) (models.Task, error) {
+	return c.cache.Get(ID)
 }

@@ -17,8 +17,8 @@ var (
 	ErrTaskNotExist = errors.New("task doesn't exist")
 )
 
-func New() *Cache {
-	return &Cache{data: make(map[uint]models.Task)}
+func New() Cache {
+	return Cache{data: make(map[uint]models.Task)}
 }
 
 // List чтение списка задач
