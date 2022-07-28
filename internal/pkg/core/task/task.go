@@ -1,15 +1,16 @@
 package task
 
 import (
+	"unicode/utf8"
+
 	"github.com/pkg/errors"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/cache"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/cache/local"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
-	"unicode/utf8"
 )
 
-// ITask интерфейс управления задачами
-type ITask interface {
+// IManager интерфейс управления задачами
+type IManager interface {
 	Create(task models.Task) error
 	Update(task models.Task) error
 	Delete(ID uint) error
@@ -17,16 +18,16 @@ type ITask interface {
 	Get(ID uint) (models.Task, error)
 }
 
-// Core Структура
-type Core struct {
+// Manager Реализация интерфейса управления задачами
+type Manager struct {
 	cache cache.ICache
 }
 
-// New Создание модуля управления задачами
-func New() Core {
+// NewLocalManager Создание модуля управления задачами
+func NewLocalManager() *Manager {
 	tmp := local.New()
 
-	return Core{
+	return &Manager{
 		cache: &tmp,
 	}
 }
@@ -36,21 +37,18 @@ const (
 	maxDescriptionLen = 256
 )
 
-var ErrValidation = errors.New("invalid data")
+var errValidation = errors.New("invalid data")
 
 func checkTitleAndDescription(t models.Task) error {
 	if t.Title == "" {
-		return errors.Wrap(ErrValidation, "field: [title] is empty")
+		return errors.Wrap(errValidation, "field: [title] is empty")
 	}
 	if utf8.RuneCountInString(t.Title) > maxNameLen {
-		return errors.Wrap(ErrValidation, "field: [title] too large")
+		return errors.Wrap(errValidation, "field: [title] too large")
 	}
 
-	if t.Description == "" {
-		return errors.Wrap(ErrValidation, "field: [description] is empty")
-	}
 	if utf8.RuneCountInString(t.Description) > maxDescriptionLen {
-		return errors.Wrap(ErrValidation, "field: [description] too large")
+		return errors.Wrap(errValidation, "field: [description] too large")
 	}
 
 	return nil
@@ -58,7 +56,8 @@ func checkTitleAndDescription(t models.Task) error {
 
 var lastID uint = 0
 
-func (c *Core) Create(t models.Task) error {
+// Create создание задачи
+func (c *Manager) Create(t models.Task) error {
 	t.ID = lastID
 	lastID++
 
@@ -69,7 +68,8 @@ func (c *Core) Create(t models.Task) error {
 	return c.cache.Add(t)
 }
 
-func (c *Core) Update(t models.Task) error {
+// Update обновление задачи
+func (c *Manager) Update(t models.Task) error {
 	if err := checkTitleAndDescription(t); err != nil {
 		return err
 	}
@@ -77,14 +77,17 @@ func (c *Core) Update(t models.Task) error {
 	return c.cache.Update(t)
 }
 
-func (c *Core) Delete(ID uint) error {
+// Delete удаление задачи
+func (c *Manager) Delete(ID uint) error {
 	return c.cache.Delete(ID)
 }
 
-func (c *Core) List() []models.Task {
+// List получение списка задач
+func (c *Manager) List() []models.Task {
 	return c.cache.List()
 }
 
-func (c *Core) Get(ID uint) (models.Task, error) {
+// Get получение задачи
+func (c *Manager) Get(ID uint) (models.Task, error) {
 	return c.cache.Get(ID)
 }

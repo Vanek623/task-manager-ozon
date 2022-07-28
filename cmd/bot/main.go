@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/commander"
 	"log"
 	"os"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/commander"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
 
 	"github.com/joho/godotenv"
 )
@@ -20,7 +22,8 @@ func main() {
 		token = os.Getenv("BOT_TOKEN")
 	}
 
-	cmdr, err := commander.Init(token)
+	var manager task.IManager = task.NewLocalManager()
+	cmdr, err := commander.New(token, manager)
 	if err != nil {
 		log.Fatal(err)
 	}

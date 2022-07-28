@@ -4,18 +4,21 @@ import (
 	"fmt"
 	"log"
 
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/commander/command"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/pkg/errors"
 )
 
 // Commander структура бота
 type Commander struct {
-	bot      *tgbotapi.BotAPI
-	commands map[string]command
+	bot     *tgbotapi.BotAPI
+	manager command.Manager
 }
 
-// Init инициализация бота
-func Init(token string) (*Commander, error) {
+// New инициализация бота
+func New(token string, taskManager task.IManager) (*Commander, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
@@ -24,15 +27,7 @@ func Init(token string) (*Commander, error) {
 	//bot.Debug = true
 	log.Printf("Authorized on acconut %s", bot.Self.UserName)
 
-	cmdr := &Commander{bot, make(map[string]command)}
-	cmdr.registerCommand(newStartCommand())
-	cmdr.registerCommand(newAddCommand())
-	cmdr.registerCommand(newListCommand())
-	cmdr.registerCommand(newGetCommand())
-	cmdr.registerCommand(newUpdateCommand())
-	cmdr.registerCommand(newDeleteCommand())
-
-	cmdr.registerCommand(newHelpCommand(cmdr.commands))
+	cmdr := &Commander{bot, command.NewManager(taskManager)}
 
 	return cmdr, nil
 }
@@ -50,12 +45,7 @@ func (cmdr *Commander) Run() error {
 			continue
 		}
 
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
-		if res, err := cmdr.handleMessage(update.Message); err != nil {
-			msg.Text = err.Error()
-		} else {
-			msg.Text = res
-		}
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, cmdr.handleMessage(update.Message))
 
 		_, err := cmdr.bot.Send(msg)
 		if err != nil {
@@ -66,29 +56,20 @@ func (cmdr *Commander) Run() error {
 	return nil
 }
 
-func (cmdr *Commander) registerCommand(c command) {
-	cmdr.commands[c.name] = c
-}
+var startCommandName = "start"
 
-var startCommandName = newStartCommand().name
-
-func (cmdr *Commander) handleMessage(msg *tgbotapi.Message) (string, error) {
-	c, ok := cmdr.commands[msg.Command()]
-	if !ok {
-		return "", errors.Errorf("command /%s not found", msg.Command())
+func (cmdr *Commander) handleMessage(msg *tgbotapi.Message) string {
+	c := cmdr.manager.GetCommand(msg.Command())
+	if c == nil {
+		return fmt.Sprintf("command /%s not found", msg.Command())
 	}
 
 	var args string
-	if c.name == startCommandName {
+	if c.Name() == startCommandName {
 		args = fmt.Sprintf("%s %s", msg.Chat.FirstName, msg.Chat.LastName)
 	} else {
 		args = msg.CommandArguments()
 	}
 
-	res, err := c.Execute(args)
-	if err != nil {
-		return "", err
-	}
-
-	return res, nil
+	return c.Execute(args)
 }
