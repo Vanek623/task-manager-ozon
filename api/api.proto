@@ -3,15 +3,21 @@ syntax = "proto3";
 package ozon.dev.tms.api;
 option go_package = "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api;api";
 
+service Admin {
+  rpc TaskCreate(TaskCreateRequest) returns (TaskCreateResponse) {}
+  rpc TaskList(TaskListRequest) returns (TaskListResponse) {}
+  rpc TaskUpdate(TaskUpdateRequest) returns (TaskUpdateResponse) {}
+  rpc TaskDelete(TaskDeleteRequest) returns (TaskDeleteResponse) {}
+  rpc TaskGet(TaskGetRequest) returns (TaskGetResponse) {}
+}
+
 /// ---------------------------------------------------------------------------------------------------------------------
 // TaskCreate endpoint messages
 // ---------------------------------------------------------------------------------------------------------------------
 
 message TaskCreateRequest {
-  uint64 ID = 1;
-  string title = 2;
-  string description = 3;
-  uint64 tm = 4;
+  string Title = 1;
+  optional string Description = 2;
 }
 message TaskCreateResponse {}
 
@@ -25,7 +31,7 @@ message TaskListResponse {
 
   message Task {
     uint64 ID = 1;
-    string name = 2;
+    string Title = 2;
   }
 }
 
@@ -35,9 +41,8 @@ message TaskListResponse {
 
 message TaskUpdateRequest {
   uint64 ID = 1;
-  string title = 2;
-  string description = 3;
-  uint64 tm = 4;
+  string Title = 2;
+  optional string Description = 3;
 }
 message TaskUpdateResponse {}
 
@@ -49,3 +54,16 @@ message TaskDeleteRequest {
   uint64 ID = 1;
 }
 message TaskDeleteResponse {}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// TaskDelete endpoint messages
+// ---------------------------------------------------------------------------------------------------------------------
+
+message TaskGetRequest {
+  uint64  ID = 1;
+}
+message TaskGetResponse {
+  string Title = 1;
+  optional string Description = 2;
+  int64 Tm = 3;
+}

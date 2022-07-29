@@ -1,6 +1,7 @@
 package task
 
 import (
+	"time"
 	"unicode/utf8"
 
 	"github.com/pkg/errors"
@@ -20,7 +21,8 @@ type IManager interface {
 
 // Manager Реализация интерфейса управления задачами
 type Manager struct {
-	cache cache.ICache
+	cache  cache.ICache
+	lastID uint
 }
 
 // NewLocalManager Создание модуля управления задачами
@@ -28,7 +30,8 @@ func NewLocalManager() *Manager {
 	tmp := local.New()
 
 	return &Manager{
-		cache: &tmp,
+		cache:  &tmp,
+		lastID: 1,
 	}
 }
 
@@ -54,12 +57,11 @@ func checkTitleAndDescription(t models.Task) error {
 	return nil
 }
 
-var lastID uint = 0
-
 // Create создание задачи
 func (c *Manager) Create(t models.Task) error {
-	t.ID = lastID
-	lastID++
+	t.ID = c.lastID
+	c.lastID++
+	t.Created = time.Now()
 
 	if err := checkTitleAndDescription(t); err != nil {
 		return err
