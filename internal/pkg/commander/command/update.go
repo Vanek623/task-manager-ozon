@@ -42,7 +42,7 @@ func newUpdateCommand(m task.IManager) *updateCommand {
 		command{
 			name:        "update",
 			description: "update task",
-			subArgs:     "<id> <name> <description>",
+			subArgs:     "<ID> <name> <description>",
 			manager:     m},
 	}
 }

@@ -69,7 +69,7 @@ func (c *Cache) Delete(ID uint) error {
 // Get чтение задачи
 func (c *Cache) Get(ID uint) (models.Task, error) {
 	if _, ok := c.data[ID]; !ok {
-		return models.Task{}, errors.Wrapf(errTaskNotExist, "ID: [%d}", ID)
+		return models.Task{}, errors.Wrapf(errTaskNotExist, "ID: [%d]", ID)
 	}
 
 	return c.data[ID], nil

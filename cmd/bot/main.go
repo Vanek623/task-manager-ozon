@@ -11,17 +11,30 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func readToken() string {
 	var token string
 	if err := godotenv.Load(); err != nil {
-		fmt.Print("Token missing in .env! Enter token: ")
-		if _, err = fmt.Scan(&token); err != nil {
-			log.Fatal(err)
-		}
+		fmt.Println(".env file didn't open!")
 	} else {
 		token = os.Getenv("BOT_TOKEN")
 	}
 
+	if token == "" {
+		fmt.Print("Token not found! Enter token: ")
+		if _, err := fmt.Scan(&token); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if token == "" {
+		log.Fatal("Empty token!")
+	}
+
+	return token
+}
+
+func main() {
+	token := readToken()
 	var manager task.IManager = task.NewLocalManager()
 	cmdr, err := commander.New(token, manager)
 	if err != nil {
