@@ -3,12 +3,41 @@ syntax = "proto3";
 package ozon.dev.tms.api;
 option go_package = "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api;api";
 
+import "google/api/annotations.proto";
+
 service Admin {
-  rpc TaskCreate(TaskCreateRequest) returns (TaskCreateResponse) {}
-  rpc TaskList(TaskListRequest) returns (TaskListResponse) {}
-  rpc TaskUpdate(TaskUpdateRequest) returns (TaskUpdateResponse) {}
-  rpc TaskDelete(TaskDeleteRequest) returns (TaskDeleteResponse) {}
-  rpc TaskGet(TaskGetRequest) returns (TaskGetResponse) {}
+  rpc TaskCreate(TaskCreateRequest) returns (TaskCreateResponse) {
+    option (google.api.http) = {
+      post: "/v1/user"
+      body: "*"
+    };
+  }
+
+  rpc TaskList(TaskListRequest) returns (TaskListResponse) {
+    option (google.api.http) = {
+      get: "/v1/users"
+    };
+  }
+
+  rpc TaskUpdate(TaskUpdateRequest) returns (TaskUpdateResponse) {
+    option (google.api.http) = {
+      put: "/v1/user"
+      body: "*"
+    };
+  }
+
+  rpc TaskDelete(TaskDeleteRequest) returns (TaskDeleteResponse) {
+    option (google.api.http) = {
+      delete: "/v1/user"
+      body: "*"
+    };
+  }
+
+  rpc TaskGet(TaskGetRequest) returns (TaskGetResponse) {
+    option (google.api.http) = {
+      get: "/v1/user"
+    };
+  }
 }
 
 /// ---------------------------------------------------------------------------------------------------------------------

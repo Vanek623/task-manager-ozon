@@ -1,4 +1,4 @@
-package main
+package bot
 
 import (
 	"fmt"
@@ -33,10 +33,10 @@ func readToken() string {
 	return token
 }
 
-func main() {
+// RunBot запускает тг бота
+func RunBot(tm task.IManager) {
 	token := readToken()
-	var manager task.IManager = task.NewLocalManager()
-	cmdr, err := commander.New(token, manager)
+	cmdr, err := commander.New(token, tm)
 	if err != nil {
 		log.Fatal(err)
 	}
