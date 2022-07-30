@@ -1,16 +1,17 @@
-package main
+package client
 
 import (
 	"context"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/config"
 	"log"
 
-	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/config"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func main() {
+// Run запустить клиента
+func Run() {
 	con, err := grpc.Dial(config.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatal(err)

@@ -33,8 +33,8 @@ func readToken() string {
 	return token
 }
 
-// RunBot запускает тг бота
-func RunBot(tm task.IManager) {
+// Run запускает тг бота
+func Run(tm task.IManager) {
 	token := readToken()
 	cmdr, err := commander.New(token, tm)
 	if err != nil {

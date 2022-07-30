@@ -1,8 +1,8 @@
-package main
+package server
 
 import (
 	"context"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/config"
 	"log"
 	"net"
 	"net/http"
@@ -11,14 +11,14 @@ import (
 
 	"google.golang.org/grpc/credentials/insecure"
 
-	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/config"
 	apiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api"
 	taskPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api"
 	"google.golang.org/grpc"
 )
 
-func runGRPC(tm taskPkg.IManager) {
+// RunGRPC запускает GRPC
+func RunGRPC(tm taskPkg.IManager) {
 	listener, err := net.Listen(config.ConnectionType, config.FullAddress)
 	if err != nil {
 		log.Fatal(err)
@@ -32,16 +32,8 @@ func runGRPC(tm taskPkg.IManager) {
 	}
 }
 
-func main() {
-	tm := taskPkg.NewLocalManager()
-	
-	go bot.RunBot(tm)
-	go runREST()
-
-	runGRPC(tm)
-}
-
-func runREST() {
+// RunREST запускает REST
+func RunREST() {
 	ctx := context.Background()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -51,11 +43,11 @@ func runREST() {
 		runtime.WithIncomingHeaderMatcher(headerMatcherREST),
 	)
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	if err := pb.RegisterAdminHandlerFromEndpoint(ctx, mux, ":8081", opts); err != nil {
+	if err := pb.RegisterAdminHandlerFromEndpoint(ctx, mux, config.FullAddress, opts); err != nil {
 		panic(err)
 	}
 
-	if err := http.ListenAndServe(config.FullAddress, mux); err != nil {
+	if err := http.ListenAndServe(config.FullHTTPAddress, mux); err != nil {
 		panic(err)
 	}
 }

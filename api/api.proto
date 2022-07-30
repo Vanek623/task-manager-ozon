@@ -8,34 +8,34 @@ import "google/api/annotations.proto";
 service Admin {
   rpc TaskCreate(TaskCreateRequest) returns (TaskCreateResponse) {
     option (google.api.http) = {
-      post: "/v1/user"
+      post: "/v1/task"
       body: "*"
     };
   }
 
   rpc TaskList(TaskListRequest) returns (TaskListResponse) {
     option (google.api.http) = {
-      get: "/v1/users"
+      get: "/v1/tasks"
     };
   }
 
   rpc TaskUpdate(TaskUpdateRequest) returns (TaskUpdateResponse) {
     option (google.api.http) = {
-      put: "/v1/user"
+      put: "/v1/task"
       body: "*"
     };
   }
 
   rpc TaskDelete(TaskDeleteRequest) returns (TaskDeleteResponse) {
     option (google.api.http) = {
-      delete: "/v1/user"
+      delete: "/v1/task"
       body: "*"
     };
   }
 
   rpc TaskGet(TaskGetRequest) returns (TaskGetResponse) {
     option (google.api.http) = {
-      get: "/v1/user"
+      get: "/v1/task"
     };
   }
 }
@@ -45,8 +45,8 @@ service Admin {
 // ---------------------------------------------------------------------------------------------------------------------
 
 message TaskCreateRequest {
-  string Title = 1;
-  optional string Description = 2;
+  string title = 1;
+  optional string description = 2;
 }
 message TaskCreateResponse {}
 
@@ -60,7 +60,7 @@ message TaskListResponse {
 
   message Task {
     uint64 ID = 1;
-    string Title = 2;
+    string title = 2;
   }
 }
 
@@ -70,8 +70,8 @@ message TaskListResponse {
 
 message TaskUpdateRequest {
   uint64 ID = 1;
-  string Title = 2;
-  optional string Description = 3;
+  string title = 2;
+  optional string description = 3;
 }
 message TaskUpdateResponse {}
 
@@ -92,7 +92,7 @@ message TaskGetRequest {
   uint64  ID = 1;
 }
 message TaskGetResponse {
-  string Title = 1;
-  optional string Description = 2;
-  int64 Tm = 3;
+  string title = 1;
+  optional string description = 2;
+  int64 tm = 3;
 }

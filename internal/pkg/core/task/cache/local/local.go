@@ -67,7 +67,7 @@ func (c *Cache) Update(t models.Task) error {
 	}
 
 	t.Created = c.data[t.ID].Created
-	//c.data[t.ID].Created = t.Created
+	c.data[t.ID] = t
 
 	return nil
 }

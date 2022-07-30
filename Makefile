@@ -12,7 +12,7 @@ run-in-docker: build
 .PHONY: build
 build:
 	go mod download && CGO_ENABLED=0  go build \
-		-o ./bin/main$(shell go env GOEXE) ./cmd/bot/main.go
+		-o ./bin/main$(shell go env GOEXE) ./cmd/main.go
 
 .PHONY: run
 run:
@@ -51,7 +51,7 @@ lint-full: .lint-full
 
 # pb depens
 .PHONY: .pbdeps
-.deps:
+.pbdeps:
 	GOBIN=$(LOCAL_BIN) go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway && \
 	GOBIN=$(LOCAL_BIN) go install google.golang.org/protobuf/cmd/protoc-gen-go && \
 	GOBIN=$(LOCAL_BIN) go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
