@@ -27,6 +27,8 @@ func RunGRPC(tm taskPkg.IManager) {
 	s := grpc.NewServer()
 	pb.RegisterAdminServer(s, apiPkg.New(tm))
 
+	log.Printf("grpc started")
+
 	if err = s.Serve(listener); err != nil {
 		log.Panic(err)
 	}
@@ -46,6 +48,7 @@ func RunREST() {
 	if err := pb.RegisterAdminHandlerFromEndpoint(ctx, mux, config.FullAddress, opts); err != nil {
 		panic(err)
 	}
+	log.Printf("rest started")
 
 	if err := http.ListenAndServe(config.FullHTTPAddress, mux); err != nil {
 		panic(err)

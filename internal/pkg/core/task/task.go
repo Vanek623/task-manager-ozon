@@ -1,6 +1,7 @@
 package task
 
 import (
+	"sync/atomic"
 	"time"
 	"unicode/utf8"
 
@@ -22,7 +23,7 @@ type IManager interface {
 // Manager Реализация интерфейса управления задачами
 type Manager struct {
 	cache  cache.ICache
-	lastID uint
+	lastID uint64
 }
 
 // NewLocalManager Создание модуля управления задачами
@@ -31,7 +32,7 @@ func NewLocalManager() *Manager {
 
 	return &Manager{
 		cache:  &tmp,
-		lastID: 1,
+		lastID: 0,
 	}
 }
 
@@ -59,13 +60,14 @@ func checkTitleAndDescription(t models.Task) error {
 
 // Create создание задачи
 func (c *Manager) Create(t models.Task) error {
-	t.ID = c.lastID
-	c.lastID++
-	t.Created = time.Now()
-
 	if err := checkTitleAndDescription(t); err != nil {
 		return err
 	}
+
+	t.ID = uint(atomic.LoadUint64(&c.lastID))
+	atomic.AddUint64(&c.lastID, 1)
+
+	t.Created = time.Now()
 
 	return c.cache.Add(t)
 }

@@ -3,24 +3,35 @@ package client
 import (
 	"context"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/config"
+	"google.golang.org/grpc/credentials/insecure"
 	"log"
+	"time"
 
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
+
+const reconnectMaxCount = 5
+const reconnectTimeout = 2 * time.Second
 
 // Run запустить клиента
 func Run() {
 	con, err := grpc.Dial(config.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatal(err)
+	for count := 1; err != nil; count++ {
+		if count > reconnectMaxCount {
+			log.Fatal("cannot connect to server")
+		}
+
+		log.Printf("cannot connect to server, try to connect #%d of %d in %d", count, reconnectMaxCount, reconnectTimeout)
+		time.Sleep(reconnectTimeout)
+		con, err = grpc.Dial(config.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	c := pb.NewAdminClient(con)
 
-	ctx := context.Background()
+	log.Println("client started")
 
+	ctx := context.Background()
 	{
 		d := "Some description"
 		_, err := c.TaskCreate(ctx, &pb.TaskCreateRequest{
