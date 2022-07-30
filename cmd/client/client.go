@@ -2,10 +2,12 @@ package client
 
 import (
 	"context"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/config"
-	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	"time"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/config"
+
+	"google.golang.org/grpc/credentials/insecure"
 
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api"
 	"google.golang.org/grpc"
@@ -16,8 +18,11 @@ const reconnectTimeout = 2 * time.Second
 
 // Run запустить клиента
 func Run() {
+	// Задержка для запуска grpc сервера
+	time.Sleep(reconnectTimeout)
+
 	con, err := grpc.Dial(config.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	for count := 1; err != nil; count++ {
+	for count := 1; err != nil || con == nil; count++ {
 		if count > reconnectMaxCount {
 			log.Fatal("cannot connect to server")
 		}
