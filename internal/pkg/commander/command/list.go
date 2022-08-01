@@ -8,8 +8,11 @@ type listCommand struct {
 	command
 }
 
-func (c *listCommand) Execute(args string) string {
-	tasks := c.manager.List()
+func (c *listCommand) Execute(_ string) string {
+	tasks, err := c.manager.List()
+	if err != nil {
+		return err.Error()
+	}
 
 	if len(tasks) == 0 {
 		return "There are no tasks!"

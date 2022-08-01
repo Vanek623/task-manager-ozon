@@ -10,7 +10,7 @@ import (
 type iTaskManager interface {
 	Add(t models.Task) error
 	Delete(ID uint) error
-	List() []models.Task
+	List() ([]models.Task, error)
 	Update(t models.Task) error
 	Get(ID uint) (models.Task, error)
 }
@@ -39,7 +39,10 @@ func (i implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateRequest
 }
 
 func (i implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
-	tasks := i.tm.List()
+	tasks, err := i.tm.List()
+	if err != nil {
+		return nil, err
+	}
 
 	result := make([]*pb.TaskListResponse_Task, 0, len(tasks))
 	for _, task := range tasks {

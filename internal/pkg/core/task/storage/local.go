@@ -1,12 +1,16 @@
 package storage
 
 import (
+	"context"
+	"time"
+
 	"github.com/pkg/errors"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 )
 
 const localPoolSize = 10
 const localCapacity = 8
+const localTimeout = 100 * time.Millisecond
 
 // Local структура локального кэша
 type Local struct {
@@ -14,11 +18,12 @@ type Local struct {
 	data map[uint]models.Task
 }
 
-// New Создание локального хранилища
-func New() *Local {
+// NewLocal Создание локального хранилища
+func NewLocal() *Local {
 	return &Local{
 		storage: storage{
 			capacity: localCapacity,
+			timeout:  localTimeout,
 			pool:     make(chan struct{}, localPoolSize),
 		},
 		data: make(map[uint]models.Task),
@@ -26,7 +31,119 @@ func New() *Local {
 }
 
 // List чтение списка задач
-func (c *Local) List() []models.Task {
+func (c *Local) List() ([]models.Task, error) {
+	proc := make(chan struct{}, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+
+	var tmp []models.Task
+	go func() {
+		tmp = c.list()
+		proc <- struct{}{}
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ErrActionTimeout
+		case <-proc:
+			return tmp, nil
+		}
+	}
+}
+
+// Add добавление задачи
+func (c *Local) Add(t models.Task) error {
+	proc := make(chan struct{}, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+
+	var err error
+	go func() {
+		//time.Sleep(time.Second)
+		err = c.add(t)
+		proc <- struct{}{}
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ErrActionTimeout
+		case <-proc:
+			return err
+		}
+	}
+}
+
+// Update обновление задачи
+func (c *Local) Update(t models.Task) error {
+	proc := make(chan struct{}, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+
+	var err error
+	go func() {
+		err = c.update(t)
+		proc <- struct{}{}
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ErrActionTimeout
+		case <-proc:
+			return err
+		}
+	}
+}
+
+// Delete удаление задачи
+func (c *Local) Delete(ID uint) error {
+	proc := make(chan struct{}, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+
+	var err error
+	go func() {
+		err = c.delete(ID)
+		proc <- struct{}{}
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ErrActionTimeout
+		case <-proc:
+			return err
+		}
+	}
+}
+
+// Get чтение задачи
+func (c *Local) Get(ID uint) (models.Task, error) {
+	proc := make(chan struct{}, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
+	defer cancel()
+
+	var err error
+	var task models.Task
+	go func() {
+		task, err = c.get(ID)
+		time.Sleep(time.Second)
+		proc <- struct{}{}
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return task, ErrActionTimeout
+		case <-proc:
+			return task, err
+		}
+	}
+}
+
+func (c *Local) list() []models.Task {
 	c.rLock()
 	defer c.rUnlock()
 
@@ -39,8 +156,7 @@ func (c *Local) List() []models.Task {
 	return res
 }
 
-// Add добавление задачи
-func (c *Local) Add(t models.Task) error {
+func (c *Local) add(t models.Task) error {
 	c.lock()
 	defer c.unlock()
 
@@ -55,8 +171,7 @@ func (c *Local) Add(t models.Task) error {
 	return nil
 }
 
-// Update обновление задачи
-func (c *Local) Update(t models.Task) error {
+func (c *Local) update(t models.Task) error {
 	c.lock()
 	defer c.unlock()
 
@@ -70,8 +185,7 @@ func (c *Local) Update(t models.Task) error {
 	return nil
 }
 
-// Delete удаление задачи
-func (c *Local) Delete(ID uint) error {
+func (c *Local) delete(ID uint) error {
 	c.lock()
 	defer c.unlock()
 
@@ -83,8 +197,7 @@ func (c *Local) Delete(ID uint) error {
 	return nil
 }
 
-// Get чтение задачи
-func (c *Local) Get(ID uint) (models.Task, error) {
+func (c *Local) get(ID uint) (models.Task, error) {
 	c.rLock()
 	defer c.rUnlock()
 

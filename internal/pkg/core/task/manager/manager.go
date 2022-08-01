@@ -1,15 +1,24 @@
 package manager
 
 import (
+	"unicode/utf8"
+
 	"github.com/pkg/errors"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
-	"unicode/utf8"
 )
 
 type iTaskManager interface {
 	Add(t models.Task) error
 	Delete(ID uint) error
-	List() []models.Task
+	List() ([]models.Task, error)
+	Update(t models.Task) error
+	Get(ID uint) (models.Task, error)
+}
+
+type iTaskStorage interface {
+	Add(t models.Task) error
+	Delete(ID uint) error
+	List() ([]models.Task, error)
 	Update(t models.Task) error
 	Get(ID uint) (models.Task, error)
 }

@@ -2,9 +2,10 @@ package bot
 
 import (
 	"fmt"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 	"log"
 	"os"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/commander"
 
@@ -32,7 +33,7 @@ func readToken() string {
 type iTaskManager interface {
 	Add(t models.Task) error
 	Delete(ID uint) error
-	List() []models.Task
+	List() ([]models.Task, error)
 	Update(t models.Task) error
 	Get(ID uint) (models.Task, error)
 }

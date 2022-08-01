@@ -32,14 +32,14 @@ func Run() {
 		con, err = grpc.Dial(config.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
-	c := pb.NewAdminClient(con)
+	server := pb.NewAdminClient(con)
 
 	log.Println("client started")
 
 	ctx := context.Background()
 	{
 		d := "Some description"
-		_, err := c.TaskCreate(ctx, &pb.TaskCreateRequest{
+		_, err := server.TaskCreate(ctx, &pb.TaskCreateRequest{
 			Title:       "First task",
 			Description: &d,
 		})
@@ -50,7 +50,7 @@ func Run() {
 		}
 	}
 	{
-		_, err := c.TaskCreate(ctx, &pb.TaskCreateRequest{
+		_, err := server.TaskCreate(ctx, &pb.TaskCreateRequest{
 			Title: "Second task",
 		})
 		if err != nil {
@@ -60,7 +60,7 @@ func Run() {
 		}
 	}
 	{
-		response, err := c.TaskList(ctx, &pb.TaskListRequest{})
+		response, err := server.TaskList(ctx, &pb.TaskListRequest{})
 		if err != nil {
 			log.Println(err)
 		} else {
@@ -68,7 +68,7 @@ func Run() {
 		}
 	}
 	{
-		r, err := c.TaskGet(ctx, &pb.TaskGetRequest{ID: 1})
+		r, err := server.TaskGet(ctx, &pb.TaskGetRequest{ID: 1})
 		if err != nil {
 			log.Println(err)
 		} else {
@@ -77,7 +77,7 @@ func Run() {
 	}
 	{
 		d := "edited description"
-		_, err := c.TaskUpdate(ctx, &pb.TaskUpdateRequest{
+		_, err := server.TaskUpdate(ctx, &pb.TaskUpdateRequest{
 			ID:          1,
 			Title:       "edited task",
 			Description: &d,
@@ -87,7 +87,7 @@ func Run() {
 		} else {
 			log.Println("task updated")
 
-			r, err := c.TaskGet(ctx, &pb.TaskGetRequest{ID: 1})
+			r, err := server.TaskGet(ctx, &pb.TaskGetRequest{ID: 1})
 			if err != nil {
 				log.Println(err)
 			} else {
@@ -96,13 +96,13 @@ func Run() {
 		}
 	}
 	{
-		_, err := c.TaskDelete(ctx, &pb.TaskDeleteRequest{ID: 1})
+		_, err := server.TaskDelete(ctx, &pb.TaskDeleteRequest{ID: 1})
 		if err != nil {
 			log.Println(err)
 		} else {
 			log.Println("task deleted")
 
-			r, err := c.TaskList(ctx, &pb.TaskListRequest{})
+			r, err := server.TaskList(ctx, &pb.TaskListRequest{})
 			if err != nil {
 				log.Println(err)
 			} else {

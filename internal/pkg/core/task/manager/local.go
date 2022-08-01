@@ -1,31 +1,24 @@
 package manager
 
 import (
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
-	storagePkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/storage"
 	"sync/atomic"
 	"time"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
+	storagePkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/storage"
 )
 
 // LocalManager Реализация интерфейса управления задачами
 type LocalManager struct {
-	storage iStorage
+	storage iTaskStorage
 	lastID  uint64
 }
 
 // NewLocal Создание модуля управления задачами
 func NewLocal() *LocalManager {
 	return &LocalManager{
-		storage: storagePkg.New(),
+		storage: storagePkg.NewLocal(),
 	}
-}
-
-type iStorage interface {
-	Add(t models.Task) error
-	Delete(ID uint) error
-	List() []models.Task
-	Update(t models.Task) error
-	Get(ID uint) (models.Task, error)
 }
 
 // Add создание задачи
@@ -55,7 +48,7 @@ func (c *LocalManager) Delete(ID uint) error {
 }
 
 // List получение списка задач
-func (c *LocalManager) List() []models.Task {
+func (c *LocalManager) List() ([]models.Task, error) {
 	return c.storage.List()
 }
 

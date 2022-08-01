@@ -2,8 +2,9 @@ package command
 
 import (
 	"fmt"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 	"strings"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 
 	"github.com/pkg/errors"
 )
@@ -20,7 +21,7 @@ type ICommand interface {
 type iTaskManager interface {
 	Add(t models.Task) error
 	Delete(ID uint) error
-	List() []models.Task
+	List() ([]models.Task, error)
 	Update(t models.Task) error
 	Get(ID uint) (models.Task, error)
 }
