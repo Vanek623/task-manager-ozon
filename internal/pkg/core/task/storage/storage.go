@@ -5,16 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 )
-
-type iTaskStorage interface {
-	Add(t models.Task) error
-	Delete(ID uint) error
-	List() ([]models.Task, error)
-	Update(t models.Task) error
-	Get(ID uint) (models.Task, error)
-}
 
 var (
 	// ErrTaskExist задача уже есть в хранилище
@@ -23,6 +14,7 @@ var (
 	// ErrTaskNotExist задачи нет в хранилище
 	ErrTaskNotExist = errors.New("task doesn't exist")
 
+	// ErrActionTimeout таймаут операции
 	ErrActionTimeout = errors.New("request timeout")
 )
 
