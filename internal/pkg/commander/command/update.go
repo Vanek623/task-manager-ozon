@@ -3,8 +3,6 @@ package command
 import (
 	"fmt"
 	"strconv"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
 )
 
 type updateCommand struct {
@@ -37,7 +35,7 @@ func (c *updateCommand) Execute(args string) string {
 	return "Task updated"
 }
 
-func newUpdateCommand(m task.IManager) *updateCommand {
+func newUpdateCommand(m iTaskManager) *updateCommand {
 	return &updateCommand{
 		command{
 			name:        "update",

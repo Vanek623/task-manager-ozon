@@ -3,18 +3,25 @@ package api
 import (
 	"context"
 
-	taskPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api"
 )
 
+type iTaskManager interface {
+	Add(t models.Task) error
+	Delete(ID uint) error
+	List() []models.Task
+	Update(t models.Task) error
+	Get(ID uint) (models.Task, error)
+}
+
 type implementation struct {
 	pb.UnimplementedAdminServer
-	tm taskPkg.IManager
+	tm iTaskManager
 }
 
 //New создание обработчика
-func New(tm taskPkg.IManager) pb.AdminServer {
+func New(tm iTaskManager) pb.AdminServer {
 	return &implementation{tm: tm}
 }
 
@@ -24,7 +31,7 @@ func (i implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateRequest
 		Description: in.GetDescription(),
 	}
 
-	if err := i.tm.Create(task); err != nil {
+	if err := i.tm.Add(task); err != nil {
 		return nil, err
 	}
 

@@ -2,8 +2,6 @@ package command
 
 import (
 	"strings"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
 )
 
 type listCommand struct {
@@ -25,7 +23,7 @@ func (c *listCommand) Execute(args string) string {
 	return strings.Join(out, "\n")
 }
 
-func newListCommand(m task.IManager) *listCommand {
+func newListCommand(m iTaskManager) *listCommand {
 	return &listCommand{
 		command{
 			name:        "list",

@@ -3,8 +3,6 @@ package command
 import (
 	"fmt"
 	"strconv"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
 )
 
 type deleteCommand struct {
@@ -29,7 +27,7 @@ func (c *deleteCommand) Execute(args string) string {
 	return "Task deleted"
 }
 
-func newDeleteCommand(m task.IManager) *deleteCommand {
+func newDeleteCommand(m iTaskManager) *deleteCommand {
 	return &deleteCommand{
 		command{
 			name:        "delete",

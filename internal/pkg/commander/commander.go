@@ -2,14 +2,22 @@ package commander
 
 import (
 	"fmt"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 	"log"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/commander/command"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/pkg/errors"
 )
+
+type iTaskManager interface {
+	Add(t models.Task) error
+	Delete(ID uint) error
+	List() []models.Task
+	Update(t models.Task) error
+	Get(ID uint) (models.Task, error)
+}
 
 // Commander структура бота
 type Commander struct {
@@ -18,7 +26,7 @@ type Commander struct {
 }
 
 // New инициализация бота
-func New(token string, taskManager task.IManager) (*Commander, error) {
+func New(token string, taskManager iTaskManager) (*Commander, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err

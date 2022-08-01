@@ -3,7 +3,6 @@ package command
 import (
 	"time"
 
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 )
 
@@ -17,7 +16,7 @@ func (c *addCommand) Execute(args string) string {
 		return err.Error()
 	}
 
-	if err = c.manager.Create(models.Task{
+	if err = c.manager.Add(models.Task{
 		Title:       argsArr[0],
 		Description: argsArr[1],
 		Created:     time.Now(),
@@ -28,7 +27,7 @@ func (c *addCommand) Execute(args string) string {
 	return "Task added"
 }
 
-func newAddCommand(m task.IManager) *addCommand {
+func newAddCommand(m iTaskManager) *addCommand {
 	return &addCommand{
 		command{
 			name:        "add",

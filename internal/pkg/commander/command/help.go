@@ -2,8 +2,6 @@ package command
 
 import (
 	"strings"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
 )
 
 type helpCommand struct {
@@ -15,7 +13,7 @@ func (c *helpCommand) Execute(args string) string {
 	return c.helpList
 }
 
-func newHelpCommand(m task.IManager, commands map[string]ICommand) *helpCommand {
+func newHelpCommand(m iTaskManager, commands map[string]ICommand) *helpCommand {
 	tmp := helpCommand{
 		command: command{
 			name:        "help",

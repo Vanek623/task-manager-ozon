@@ -1,16 +1,12 @@
 package command
 
-import (
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
-)
-
 // Manager структура содержащая команды
 type Manager struct {
 	commands map[string]ICommand
 }
 
 // NewManager создание менеджера команд
-func NewManager(tm task.IManager) Manager {
+func NewManager(tm iTaskManager) Manager {
 	m := Manager{}
 	m.createCommands(tm)
 
@@ -22,7 +18,7 @@ func (m *Manager) GetCommand(name string) ICommand {
 	return m.commands[name]
 }
 
-func (m *Manager) createCommands(tm task.IManager) {
+func (m *Manager) createCommands(tm iTaskManager) {
 	m.commands = make(map[string]ICommand)
 
 	m.registerCommand(newAddCommand(tm))

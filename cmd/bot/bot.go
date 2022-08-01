@@ -2,11 +2,11 @@ package bot
 
 import (
 	"fmt"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 	"log"
 	"os"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/commander"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
 
 	"github.com/joho/godotenv"
 )
@@ -14,7 +14,7 @@ import (
 func readToken() string {
 	var token string
 	if err := godotenv.Load(); err != nil {
-		fmt.Println(".env file didn't open!")
+		log.Println(err)
 	} else {
 		token = os.Getenv("BOT_TOKEN")
 	}
@@ -26,16 +26,24 @@ func readToken() string {
 		}
 	}
 
+	return token
+}
+
+type iTaskManager interface {
+	Add(t models.Task) error
+	Delete(ID uint) error
+	List() []models.Task
+	Update(t models.Task) error
+	Get(ID uint) (models.Task, error)
+}
+
+// Run запускает тг бота
+func Run(tm iTaskManager) {
+	token := readToken()
 	if token == "" {
 		log.Fatal("Empty token!")
 	}
 
-	return token
-}
-
-// Run запускает тг бота
-func Run(tm task.IManager) {
-	token := readToken()
 	cmdr, err := commander.New(token, tm)
 	if err != nil {
 		log.Fatal(err)

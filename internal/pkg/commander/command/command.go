@@ -2,9 +2,8 @@ package command
 
 import (
 	"fmt"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 	"strings"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
 
 	"github.com/pkg/errors"
 )
@@ -18,11 +17,19 @@ type ICommand interface {
 	Help() string
 }
 
+type iTaskManager interface {
+	Add(t models.Task) error
+	Delete(ID uint) error
+	List() []models.Task
+	Update(t models.Task) error
+	Get(ID uint) (models.Task, error)
+}
+
 type command struct {
 	name        string
 	description string
 	subArgs     string
-	manager     task.IManager
+	manager     iTaskManager
 }
 
 func (c *command) Name() string {

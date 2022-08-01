@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"time"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
 )
 
 type getCommand struct {
@@ -36,7 +34,7 @@ func (c *getCommand) Execute(args string) string {
 		t.Created.Format(time.Stamp))
 }
 
-func newGetCommand(m task.IManager) *getCommand {
+func newGetCommand(m iTaskManager) *getCommand {
 	return &getCommand{
 		command{
 			name:        "get",

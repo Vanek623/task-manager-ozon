@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 	"log"
 	"net"
 	"net/http"
@@ -13,13 +14,20 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	apiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api"
-	taskPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api"
 	"google.golang.org/grpc"
 )
 
+type iTaskManager interface {
+	Add(t models.Task) error
+	Delete(ID uint) error
+	List() []models.Task
+	Update(t models.Task) error
+	Get(ID uint) (models.Task, error)
+}
+
 // RunGRPC запускает GRPC
-func RunGRPC(tm taskPkg.IManager) {
+func RunGRPC(tm iTaskManager) {
 	listener, err := net.Listen(config.ConnectionType, config.FullAddress)
 	if err != nil {
 		log.Fatal(err)
@@ -28,10 +36,10 @@ func RunGRPC(tm taskPkg.IManager) {
 	s := grpc.NewServer()
 	pb.RegisterAdminServer(s, apiPkg.New(tm))
 
-	log.Printf("grpc started")
+	log.Println("grpc started")
 
 	if err = s.Serve(listener); err != nil {
-		log.Panic(err)
+		log.Fatal(err)
 	}
 }
 
@@ -42,25 +50,15 @@ func RunREST() {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	mux := runtime.NewServeMux(
-		runtime.WithIncomingHeaderMatcher(headerMatcherREST),
-	)
+	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	if err := pb.RegisterAdminHandlerFromEndpoint(ctx, mux, config.FullAddress, opts); err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
-	log.Printf("rest started")
+
+	log.Println("rest started")
 
 	if err := http.ListenAndServe(config.FullHTTPAddress, mux); err != nil {
-		panic(err)
-	}
-}
-
-func headerMatcherREST(key string) (string, bool) {
-	switch key {
-	case "Custom":
-		return key, true
-	default:
-		return key, false
+		log.Fatal(err)
 	}
 }
