@@ -8,202 +8,80 @@ import (
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 )
 
-const localPoolSize = 10
 const localCapacity = 8
-const localTimeout = 100 * time.Millisecond
 
-// Local структура локального кэша
-type Local struct {
-	storage
-	data map[uint]models.Task
+// local структура локального хранилища
+type local struct {
+	data   map[uint]models.Task
+	lastID uint64
 }
 
-// NewLocal Создание локального хранилища
-func NewLocal() *Local {
-	return &Local{
-		storage: storage{
-			capacity: localCapacity,
-			timeout:  localTimeout,
-			pool:     make(chan struct{}, localPoolSize),
-		},
-		data: make(map[uint]models.Task),
+func newLocal() *local {
+	return &local{
+		data:   make(map[uint]models.Task),
+		lastID: 1,
 	}
 }
 
-// List чтение списка задач
-func (c *Local) List() ([]models.Task, error) {
-	proc := make(chan struct{}, 1)
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
-
-	var tmp []models.Task
-	go func() {
-		tmp = c.list()
-		proc <- struct{}{}
-	}()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil, ErrActionTimeout
-		case <-proc:
-			return tmp, nil
-		}
-	}
-}
-
-// Add добавление задачи
-func (c *Local) Add(t models.Task) error {
-	proc := make(chan struct{}, 1)
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
-
-	var err error
-	go func() {
-		//time.Sleep(time.Second)
-		err = c.add(t)
-		proc <- struct{}{}
-	}()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ErrActionTimeout
-		case <-proc:
-			return err
-		}
-	}
-}
-
-// Update обновление задачи
-func (c *Local) Update(t models.Task) error {
-	proc := make(chan struct{}, 1)
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
-
-	var err error
-	go func() {
-		err = c.update(t)
-		proc <- struct{}{}
-	}()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ErrActionTimeout
-		case <-proc:
-			return err
-		}
-	}
-}
-
-// Delete удаление задачи
-func (c *Local) Delete(ID uint) error {
-	proc := make(chan struct{}, 1)
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
-
-	var err error
-	go func() {
-		err = c.delete(ID)
-		proc <- struct{}{}
-	}()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ErrActionTimeout
-		case <-proc:
-			return err
-		}
-	}
-}
-
-// Get чтение задачи
-func (c *Local) Get(ID uint) (models.Task, error) {
-	proc := make(chan struct{}, 1)
-	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
-	defer cancel()
-
-	var err error
-	var task models.Task
-	go func() {
-		task, err = c.get(ID)
-		time.Sleep(time.Second)
-		proc <- struct{}{}
-	}()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return task, ErrActionTimeout
-		case <-proc:
-			return task, err
-		}
-	}
-}
-
-func (c *Local) list() []models.Task {
-	c.rLock()
-	defer c.rUnlock()
-
-	res := make([]models.Task, 0, len(c.data))
-
-	for _, t := range c.data {
-		res = append(res, t)
+func (s *local) Add(_ context.Context, t models.Task) error {
+	if len(s.data) >= localCapacity {
+		return ErrHasNoSpace
 	}
 
-	return res
-}
-
-func (c *Local) add(t models.Task) error {
-	c.lock()
-	defer c.unlock()
-
-	if len(c.data) >= c.capacity {
-		return errors.New("Has no space for tasks, please delete one")
-	}
-	if _, ok := c.data[t.ID]; ok {
-		return errors.Wrapf(ErrTaskExist, "ID: [%d]", t.ID)
+	if err := checkTitleAndDescription(t); err != nil {
+		return err
 	}
 
-	c.data[t.ID] = t
-	return nil
-}
+	t.ID = uint(s.lastID)
+	s.lastID++
+	t.Created = time.Now()
 
-func (c *Local) update(t models.Task) error {
-	c.lock()
-	defer c.unlock()
-
-	if _, ok := c.data[t.ID]; !ok {
-		return errors.Wrapf(ErrTaskNotExist, "ID: [%d]", t.ID)
-	}
-
-	t.Created = c.data[t.ID].Created
-	c.data[t.ID] = t
+	s.data[t.ID] = t
 
 	return nil
 }
 
-func (c *Local) delete(ID uint) error {
-	c.lock()
-	defer c.unlock()
-
-	if _, ok := c.data[ID]; !ok {
+func (s *local) Delete(_ context.Context, ID uint) error {
+	if _, ok := s.data[ID]; !ok {
 		return errors.Wrapf(ErrTaskNotExist, "ID: [%d]", ID)
 	}
 
-	delete(c.data, ID)
+	delete(s.data, ID)
 	return nil
 }
 
-func (c *Local) get(ID uint) (models.Task, error) {
-	c.rLock()
-	defer c.rUnlock()
+func (s *local) List(_ context.Context) ([]models.Task, error) {
+	res := make([]models.Task, 0, len(s.data))
 
-	if _, ok := c.data[ID]; !ok {
-		return models.Task{}, errors.Wrapf(ErrTaskNotExist, "ID: [%d]", ID)
+	for _, t := range s.data {
+		res = append(res, t)
 	}
 
-	return c.data[ID], nil
+	return res, nil
+}
+
+func (s *local) Update(_ context.Context, t models.Task) error {
+	if _, ok := s.data[t.ID]; !ok {
+		return errors.Wrapf(ErrTaskNotExist, "ID: [%d]", t.ID)
+	}
+
+	if err := checkTitleAndDescription(t); err != nil {
+		return err
+	}
+
+	t.Created = s.data[t.ID].Created
+	s.data[t.ID] = t
+
+	return nil
+}
+
+func (s *local) Get(_ context.Context, ID uint) (*models.Task, error) {
+	time.Sleep(time.Second)
+
+	task, ok := s.data[ID]
+	if !ok {
+		return nil, errors.Wrapf(ErrTaskNotExist, "ID: [%d]", ID)
+	}
+
+	return &task, nil
 }

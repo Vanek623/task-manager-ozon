@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 )
@@ -9,7 +10,7 @@ type deleteCommand struct {
 	command
 }
 
-func (c *deleteCommand) Execute(args string) string {
+func (c *deleteCommand) Execute(ctx context.Context, args string) string {
 	argsArr, err := extractArgsCounted(args, 1, 1)
 	if err != nil {
 		return err.Error()
@@ -20,14 +21,14 @@ func (c *deleteCommand) Execute(args string) string {
 		return fmt.Sprintf("Cannot parse %s", argsArr[0])
 	}
 
-	if err = c.manager.Delete(uint(id)); err != nil {
+	if err = c.manager.Delete(ctx, uint(id)); err != nil {
 		return err.Error()
 	}
 
 	return "Task deleted"
 }
 
-func newDeleteCommand(m iTaskManager) *deleteCommand {
+func newDeleteCommand(m iTaskStorage) *deleteCommand {
 	return &deleteCommand{
 		command{
 			name:        "delete",

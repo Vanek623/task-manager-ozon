@@ -19,16 +19,16 @@ import (
 	"google.golang.org/grpc"
 )
 
-type iTaskManager interface {
-	Add(t models.Task) error
-	Delete(ID uint) error
-	List() ([]models.Task, error)
-	Update(t models.Task) error
-	Get(ID uint) (models.Task, error)
+type iTaskStorage interface {
+	Add(ctx context.Context, t models.Task) error
+	Delete(ctx context.Context, ID uint) error
+	List(ctx context.Context) ([]models.Task, error)
+	Update(ctx context.Context, t models.Task) error
+	Get(ctx context.Context, ID uint) (*models.Task, error)
 }
 
 // RunGRPC запускает GRPC
-func RunGRPC(tm iTaskManager) {
+func RunGRPC(tm iTaskStorage) {
 	listener, err := net.Listen(config.ConnectionType, config.FullAddress)
 	if err != nil {
 		log.Fatal(err)
@@ -46,9 +46,7 @@ func RunGRPC(tm iTaskManager) {
 
 // RunREST запускает REST
 func RunREST() {
-	ctx := context.Background()
-
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	mux := runtime.NewServeMux()

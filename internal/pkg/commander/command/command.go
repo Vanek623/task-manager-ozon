@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -14,23 +15,23 @@ type ICommand interface {
 	Name() string
 	Description() string
 	SubArgs() string
-	Execute(args string) string
+	Execute(ctx context.Context, args string) string
 	Help() string
 }
 
-type iTaskManager interface {
-	Add(t models.Task) error
-	Delete(ID uint) error
-	List() ([]models.Task, error)
-	Update(t models.Task) error
-	Get(ID uint) (models.Task, error)
+type iTaskStorage interface {
+	Add(ctx context.Context, t models.Task) error
+	Delete(ctx context.Context, ID uint) error
+	List(ctx context.Context) ([]models.Task, error)
+	Update(ctx context.Context, t models.Task) error
+	Get(ctx context.Context, ID uint) (*models.Task, error)
 }
 
 type command struct {
 	name        string
 	description string
 	subArgs     string
-	manager     iTaskManager
+	manager     iTaskStorage
 }
 
 func (c *command) Name() string {
@@ -45,7 +46,7 @@ func (c *command) SubArgs() string {
 	return c.subArgs
 }
 
-func (c *command) Execute(args string) string {
+func (c *command) Execute(_ context.Context, _ string) string {
 	return "Cannot exec this command"
 }
 
@@ -53,7 +54,8 @@ func (c *command) Help() string {
 	return fmt.Sprintf("/%s %s - %s", c.name, c.subArgs, c.description)
 }
 
-var errNoEnoughArgs = errors.New("has no enough arguments")
+// ErrNoEnoughArgs недостаточно аргументов
+var ErrNoEnoughArgs = errors.New("has no enough arguments")
 
 func extractArgs(args string) ([]string, error) {
 	var out []string

@@ -6,7 +6,7 @@ type Manager struct {
 }
 
 // NewManager создание менеджера команд
-func NewManager(tm iTaskManager) Manager {
+func NewManager(tm iTaskStorage) Manager {
 	m := Manager{}
 	m.createCommands(tm)
 
@@ -18,7 +18,7 @@ func (m *Manager) GetCommand(name string) ICommand {
 	return m.commands[name]
 }
 
-func (m *Manager) createCommands(tm iTaskManager) {
+func (m *Manager) createCommands(tm iTaskStorage) {
 	m.commands = make(map[string]ICommand)
 
 	m.registerCommand(newAddCommand(tm))

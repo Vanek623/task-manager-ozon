@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -30,16 +31,16 @@ func readToken() string {
 	return token
 }
 
-type iTaskManager interface {
-	Add(t models.Task) error
-	Delete(ID uint) error
-	List() ([]models.Task, error)
-	Update(t models.Task) error
-	Get(ID uint) (models.Task, error)
+type iTaskStorage interface {
+	Add(ctx context.Context, t models.Task) error
+	Delete(ctx context.Context, ID uint) error
+	List(ctx context.Context) ([]models.Task, error)
+	Update(ctx context.Context, t models.Task) error
+	Get(ctx context.Context, ID uint) (*models.Task, error)
 }
 
 // Run запускает тг бота
-func Run(tm iTaskManager) {
+func Run(tm iTaskStorage) {
 	token := readToken()
 	if token == "" {
 		log.Fatal("Empty token!")
@@ -50,7 +51,10 @@ func Run(tm iTaskManager) {
 		log.Fatal(err)
 	}
 
-	if err = cmdr.Run(); err != nil {
+	ctx, cl := context.WithCancel(context.Background())
+	defer cl()
+
+	if err = cmdr.Run(ctx); err != nil {
 		log.Fatal(err)
 	}
 }

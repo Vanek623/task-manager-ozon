@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"strings"
 )
 
@@ -8,8 +9,8 @@ type listCommand struct {
 	command
 }
 
-func (c *listCommand) Execute(_ string) string {
-	tasks, err := c.manager.List()
+func (c *listCommand) Execute(ctx context.Context, _ string) string {
+	tasks, err := c.manager.List(ctx)
 	if err != nil {
 		return err.Error()
 	}
@@ -26,7 +27,7 @@ func (c *listCommand) Execute(_ string) string {
 	return strings.Join(out, "\n")
 }
 
-func newListCommand(m iTaskManager) *listCommand {
+func newListCommand(m iTaskStorage) *listCommand {
 	return &listCommand{
 		command{
 			name:        "list",

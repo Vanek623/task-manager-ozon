@@ -7,21 +7,21 @@ import (
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api"
 )
 
-type iTaskManager interface {
-	Add(t models.Task) error
-	Delete(ID uint) error
-	List() ([]models.Task, error)
-	Update(t models.Task) error
-	Get(ID uint) (models.Task, error)
+type iTaskStorage interface {
+	Add(ctx context.Context, t models.Task) error
+	Delete(ctx context.Context, ID uint) error
+	List(ctx context.Context) ([]models.Task, error)
+	Update(ctx context.Context, t models.Task) error
+	Get(ctx context.Context, ID uint) (*models.Task, error)
 }
 
 type implementation struct {
 	pb.UnimplementedAdminServer
-	tm iTaskManager
+	tm iTaskStorage
 }
 
 //New создание обработчика
-func New(tm iTaskManager) pb.AdminServer {
+func New(tm iTaskStorage) pb.AdminServer {
 	return &implementation{tm: tm}
 }
 
@@ -31,15 +31,15 @@ func (i implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateRequest
 		Description: in.GetDescription(),
 	}
 
-	if err := i.tm.Add(task); err != nil {
+	if err := i.tm.Add(ctx, task); err != nil {
 		return nil, err
 	}
 
 	return &pb.TaskCreateResponse{}, nil
 }
 
-func (i implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
-	tasks, err := i.tm.List()
+func (i implementation) TaskList(ctx context.Context, _ *pb.TaskListRequest) (*pb.TaskListResponse, error) {
+	tasks, err := i.tm.List(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (i implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*
 }
 
 func (i implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateRequest) (*pb.TaskUpdateResponse, error) {
-	task, err := i.tm.Get(uint(in.GetID()))
+	task, err := i.tm.Get(ctx, uint(in.GetID()))
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (i implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateRequest
 	task.Title = in.GetTitle()
 	task.Description = in.GetDescription()
 
-	if err = i.tm.Update(task); err != nil {
+	if err = i.tm.Update(ctx, *task); err != nil {
 		return nil, err
 	}
 
@@ -72,7 +72,7 @@ func (i implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateRequest
 }
 
 func (i implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteRequest) (*pb.TaskDeleteResponse, error) {
-	if err := i.tm.Delete(uint(in.GetID())); err != nil {
+	if err := i.tm.Delete(ctx, uint(in.GetID())); err != nil {
 		return nil, err
 	}
 
@@ -80,7 +80,7 @@ func (i implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteRequest
 }
 
 func (i implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*pb.TaskGetResponse, error) {
-	task, err := i.tm.Get(uint(in.GetID()))
+	task, err := i.tm.Get(ctx, uint(in.GetID()))
 	if err != nil {
 		return nil, err
 	}

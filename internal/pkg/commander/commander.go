@@ -1,6 +1,7 @@
 package commander
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -12,12 +13,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-type iTaskManager interface {
-	Add(t models.Task) error
-	Delete(ID uint) error
-	List() ([]models.Task, error)
-	Update(t models.Task) error
-	Get(ID uint) (models.Task, error)
+type iTaskStorage interface {
+	Add(ctx context.Context, t models.Task) error
+	Delete(ctx context.Context, ID uint) error
+	List(ctx context.Context) ([]models.Task, error)
+	Update(ctx context.Context, t models.Task) error
+	Get(ctx context.Context, ID uint) (*models.Task, error)
 }
 
 // Commander структура бота
@@ -27,7 +28,7 @@ type Commander struct {
 }
 
 // New инициализация бота
-func New(token string, taskManager iTaskManager) (*Commander, error) {
+func New(token string, taskManager iTaskStorage) (*Commander, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
@@ -44,7 +45,7 @@ func New(token string, taskManager iTaskManager) (*Commander, error) {
 const timeOutValue = 60
 
 // Run запуск бота
-func (cmdr *Commander) Run() error {
+func (cmdr *Commander) Run(ctx context.Context) error {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = timeOutValue
 	updates := cmdr.bot.GetUpdatesChan(u)
@@ -54,7 +55,7 @@ func (cmdr *Commander) Run() error {
 			continue
 		}
 
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, cmdr.handleMessage(update.Message))
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, cmdr.handleMessage(ctx, update.Message))
 
 		_, err := cmdr.bot.Send(msg)
 		if err != nil {
@@ -67,7 +68,7 @@ func (cmdr *Commander) Run() error {
 
 var startCommandName = "start"
 
-func (cmdr *Commander) handleMessage(msg *tgbotapi.Message) string {
+func (cmdr *Commander) handleMessage(ctx context.Context, msg *tgbotapi.Message) string {
 	c := cmdr.manager.GetCommand(msg.Command())
 	if c == nil {
 		return fmt.Sprintf("command /%s not found", msg.Command())
@@ -80,5 +81,5 @@ func (cmdr *Commander) handleMessage(msg *tgbotapi.Message) string {
 		args = msg.CommandArguments()
 	}
 
-	return c.Execute(args)
+	return c.Execute(ctx, args)
 }

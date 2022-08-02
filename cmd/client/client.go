@@ -2,8 +2,11 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/config"
 
@@ -17,62 +20,63 @@ const reconnectMaxCount = 5
 const reconnectTimeout = 2 * time.Second
 
 // Run запустить клиента
-func Run() {
+func Run(ID uint) {
 	// Задержка для запуска grpc сервера
 	time.Sleep(reconnectTimeout)
 
 	con, err := grpc.Dial(config.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	for count := 1; err != nil || con == nil; count++ {
 		if count > reconnectMaxCount {
-			log.Fatal("cannot connect to server")
+			log.Fatalf("%d: cannot connect to server", ID)
 		}
 
-		log.Printf("cannot connect to server, try to connect #%d of %d in %d", count, reconnectMaxCount, reconnectTimeout)
+		log.Printf("%d: cannot connect to server, try to connect #%d of %d in %d", ID, count, reconnectMaxCount, reconnectTimeout)
 		time.Sleep(reconnectTimeout)
 		con, err = grpc.Dial(config.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	server := pb.NewAdminClient(con)
 
-	log.Println("client started")
+	log.Printf("%d: client started", ID)
 
-	ctx := context.Background()
+	ctx, cl := context.WithCancel(context.Background())
+	defer cl()
 	{
 		d := "Some description"
 		_, err := server.TaskCreate(ctx, &pb.TaskCreateRequest{
-			Title:       "First task",
+			Title:       fmt.Sprintf("%d: First task", ID),
 			Description: &d,
 		})
 		if err != nil {
-			log.Println(err)
+			log.Println(errors.Wrapf(err, "[%d]", ID))
 		} else {
-			log.Println("first task created")
+			log.Printf("%d: first task created", ID)
 		}
 	}
 	{
 		_, err := server.TaskCreate(ctx, &pb.TaskCreateRequest{
-			Title: "Second task",
+			Title: fmt.Sprintf("%d: Second task", ID),
 		})
 		if err != nil {
-			log.Println(err)
+			log.Println(errors.Wrapf(err, "[%d]", ID))
 		} else {
-			log.Println("second task created")
+			log.Printf("%d: second task created", ID)
 		}
 	}
 	{
 		response, err := server.TaskList(ctx, &pb.TaskListRequest{})
 		if err != nil {
-			log.Println(err)
+			log.Println(errors.Wrapf(err, "[%d]", ID))
 		} else {
-			log.Printf("tasks list: [%v]", response)
+			log.Printf("%d: tasks list: [%v]", ID, response)
 		}
 	}
 	{
 		r, err := server.TaskGet(ctx, &pb.TaskGetRequest{ID: 1})
 		if err != nil {
-			log.Println(err)
+			log.Println(errors.Wrapf(err, "[%d]", ID))
 		} else {
-			log.Printf("task got: [%v]", r)
+			log.Printf("%d: task got: [%v]", ID, r)
 		}
 	}
 	{
@@ -83,30 +87,30 @@ func Run() {
 			Description: &d,
 		})
 		if err != nil {
-			log.Println(err)
+			log.Println(errors.Wrapf(err, "[%d]", ID))
 		} else {
-			log.Println("task updated")
+			log.Printf("%d: task updated", ID)
 
 			r, err := server.TaskGet(ctx, &pb.TaskGetRequest{ID: 1})
 			if err != nil {
-				log.Println(err)
+				log.Println(errors.Wrapf(err, "[%d]", ID))
 			} else {
-				log.Printf("task got: [%v]", r)
+				log.Printf("%d: task got: [%v]", ID, r)
 			}
 		}
 	}
 	{
 		_, err := server.TaskDelete(ctx, &pb.TaskDeleteRequest{ID: 1})
 		if err != nil {
-			log.Println(err)
+			log.Println(errors.Wrapf(err, "[%d]", ID))
 		} else {
-			log.Println("task deleted")
+			log.Printf("%d: task deleted", ID)
 
 			r, err := server.TaskList(ctx, &pb.TaskListRequest{})
 			if err != nil {
-				log.Println(err)
+				log.Println(errors.Wrapf(err, "[%d]", ID))
 			} else {
-				log.Printf("tasks list: [%v]", r)
+				log.Printf("%d: tasks list: [%v]", ID, r)
 			}
 		}
 	}

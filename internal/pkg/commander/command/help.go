@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"strings"
 )
 
@@ -9,11 +10,11 @@ type helpCommand struct {
 	helpList string
 }
 
-func (c *helpCommand) Execute(args string) string {
+func (c *helpCommand) Execute(_ context.Context, _ string) string {
 	return c.helpList
 }
 
-func newHelpCommand(m iTaskManager, commands map[string]ICommand) *helpCommand {
+func newHelpCommand(m iTaskStorage, commands map[string]ICommand) *helpCommand {
 	tmp := helpCommand{
 		command: command{
 			name:        "help",

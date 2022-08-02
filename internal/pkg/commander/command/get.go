@@ -1,6 +1,7 @@
 package command
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -10,12 +11,12 @@ type getCommand struct {
 	command
 }
 
-func (c *getCommand) Execute(args string) string {
+func (c *getCommand) Execute(ctx context.Context, args string) string {
 	argsArr, err := extractArgs(args)
 	if err != nil {
 		return err.Error()
 	} else if len(argsArr) == 0 {
-		return errNoEnoughArgs.Error()
+		return ErrNoEnoughArgs.Error()
 	}
 
 	id, err := strconv.ParseUint(argsArr[0], 10, 64)
@@ -23,7 +24,7 @@ func (c *getCommand) Execute(args string) string {
 		return fmt.Sprintf("Cannot parse %s", argsArr[0])
 	}
 
-	t, err := c.manager.Get(uint(id))
+	t, err := c.manager.Get(ctx, uint(id))
 	if err != nil {
 		return err.Error()
 	}
@@ -34,7 +35,7 @@ func (c *getCommand) Execute(args string) string {
 		t.Created.Format(time.Stamp))
 }
 
-func newGetCommand(m iTaskManager) *getCommand {
+func newGetCommand(m iTaskStorage) *getCommand {
 	return &getCommand{
 		command{
 			name:        "get",
