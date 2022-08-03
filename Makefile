@@ -22,6 +22,11 @@ run:
 .PHONY: precommit
 precommit: lint
 
+MIGRATION_DIR=./migrations
+.PHONY: migration
+migration:
+	goose -dir=${MIGRATION_DIR} create $(NAME) sql
+
 # install golangci-lint binary
 .PHONY: install-lint
 install-lint:
