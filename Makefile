@@ -14,6 +14,10 @@ build:
 	go mod download && CGO_ENABLED=0  go build \
 		-o ./bin/main$(shell go env GOEXE) ./cmd/main.go
 
+.PHONY: run
+run:
+	go run ./cmd/bot/main.go
+
 # precommit jobs
 .PHONY: precommit
 precommit: lint
@@ -44,3 +48,15 @@ lint: .lint
 # golangci-lint full
 .PHONY: lint-full
 lint-full: .lint-full
+
+# pb depens
+.PHONY: .pbdeps
+.pbdeps:
+	GOBIN=$(LOCAL_BIN) go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway && \
+	GOBIN=$(LOCAL_BIN) go install google.golang.org/protobuf/cmd/protoc-gen-go && \
+	GOBIN=$(LOCAL_BIN) go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
+
+#pb generate
+.PHONY: .pbgen
+.pbgen:
+	GOBIN=$(LOCAL_BIN) buf generate api
