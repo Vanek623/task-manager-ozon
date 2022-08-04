@@ -23,13 +23,13 @@ func newLocal() *local {
 	}
 }
 
-func (s *local) Add(_ context.Context, t models.Task) error {
+func (s *local) Add(_ context.Context, t models.Task) (uint, error) {
 	if len(s.data) >= localCapacity {
-		return ErrHasNoSpace
+		return 0, ErrHasNoSpace
 	}
 
 	if err := checkTitleAndDescription(t); err != nil {
-		return err
+		return 0, err
 	}
 
 	t.ID = uint(s.lastID)
@@ -38,7 +38,7 @@ func (s *local) Add(_ context.Context, t models.Task) error {
 
 	s.data[t.ID] = t
 
-	return nil
+	return t.ID, nil
 }
 
 func (s *local) Delete(_ context.Context, ID uint) error {

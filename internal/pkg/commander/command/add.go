@@ -17,7 +17,7 @@ func (c *addCommand) Execute(ctx context.Context, args string) string {
 		return err.Error()
 	}
 
-	if err = c.manager.Add(ctx, models.Task{
+	if _, err = c.manager.Add(ctx, models.Task{
 		Title:       argsArr[0],
 		Description: argsArr[1],
 		Created:     time.Now(),

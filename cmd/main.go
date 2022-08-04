@@ -1,20 +1,32 @@
 package main
 
 import (
-	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
+	"context"
+	"log"
+	"os"
+
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/client"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/server"
-	taskStoragePkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/storage"
+
+	"github.com/joho/godotenv"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
 )
 
 func main() {
-	tm := taskStoragePkg.NewLocal()
+	if err := godotenv.Load(); err != nil {
+		log.Println(err)
+	}
 
-	go server.RunREST()
-	go server.RunGRPC(tm)
+	ctx, cl := context.WithCancel(context.Background())
+	defer cl()
+
+	storage := server.ConnectToDB(ctx, os.Getenv("DB_PASSWORD"))
+
+	go server.RunREST(ctx)
+	go server.RunGRPC(storage)
+
 	go client.Run(1)
 	go client.Run(2)
 
-	bot.Run(tm)
-
+	bot.Run(storage)
 }

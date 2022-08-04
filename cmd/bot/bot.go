@@ -9,17 +9,10 @@ import (
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/commander"
-
-	"github.com/joho/godotenv"
 )
 
 func readToken() string {
-	var token string
-	if err := godotenv.Load(); err != nil {
-		log.Println(err)
-	} else {
-		token = os.Getenv("BOT_TOKEN")
-	}
+	token := os.Getenv("BOT_TOKEN")
 
 	if token == "" {
 		fmt.Print("Token not found! Enter token: ")
@@ -32,7 +25,7 @@ func readToken() string {
 }
 
 type iTaskStorage interface {
-	Add(ctx context.Context, t models.Task) error
+	Add(ctx context.Context, t models.Task) (uint, error)
 	Delete(ctx context.Context, ID uint) error
 	List(ctx context.Context) ([]models.Task, error)
 	Update(ctx context.Context, t models.Task) error
@@ -54,6 +47,7 @@ func Run(tm iTaskStorage) {
 	ctx, cl := context.WithCancel(context.Background())
 	defer cl()
 
+	log.Println("bot run")
 	if err = cmdr.Run(ctx); err != nil {
 		log.Fatal(err)
 	}

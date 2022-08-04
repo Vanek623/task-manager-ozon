@@ -6,9 +6,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/pkg/errors"
+	serverPkg "gitlab.ozon.dev/Vanek623/task-manager-system/cmd/server"
 
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/config"
+	"github.com/pkg/errors"
 
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -24,7 +24,7 @@ func Run(ID uint) {
 	// Задержка для запуска grpc сервера
 	time.Sleep(reconnectTimeout)
 
-	con, err := grpc.Dial(config.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	con, err := grpc.Dial(serverPkg.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	for count := 1; err != nil || con == nil; count++ {
 		if count > reconnectMaxCount {
 			log.Fatalf("%d: cannot connect to server", ID)
@@ -32,7 +32,7 @@ func Run(ID uint) {
 
 		log.Printf("%d: cannot connect to server, try to connect #%d of %d in %d", ID, count, reconnectMaxCount, reconnectTimeout)
 		time.Sleep(reconnectTimeout)
-		con, err = grpc.Dial(config.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		con, err = grpc.Dial(serverPkg.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	server := pb.NewAdminClient(con)
@@ -43,14 +43,14 @@ func Run(ID uint) {
 	defer cl()
 	{
 		d := "Some description"
-		_, err := server.TaskCreate(ctx, &pb.TaskCreateRequest{
+		resp, err := server.TaskCreate(ctx, &pb.TaskCreateRequest{
 			Title:       fmt.Sprintf("%d: First task", ID),
 			Description: &d,
 		})
 		if err != nil {
 			log.Println(errors.Wrapf(err, "[%d]", ID))
 		} else {
-			log.Printf("%d: first task created", ID)
+			log.Printf("%d: first task created [%d]", ID, resp.GetID())
 		}
 	}
 	{
