@@ -48,7 +48,9 @@ message TaskCreateRequest {
   string title = 1;
   optional string description = 2;
 }
-message TaskCreateResponse {}
+message TaskCreateResponse {
+  uint64 ID = 1;
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // TaskList endpoint messages

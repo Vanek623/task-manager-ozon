@@ -8,7 +8,7 @@ import (
 )
 
 type iTaskStorage interface {
-	Add(ctx context.Context, t models.Task) error
+	Add(ctx context.Context, t models.Task) (uint, error)
 	Delete(ctx context.Context, ID uint) error
 	List(ctx context.Context) ([]models.Task, error)
 	Update(ctx context.Context, t models.Task) error
@@ -31,11 +31,12 @@ func (i implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateRequest
 		Description: in.GetDescription(),
 	}
 
-	if err := i.tm.Add(ctx, task); err != nil {
+	ID, err := i.tm.Add(ctx, task)
+	if err != nil {
 		return nil, err
 	}
 
-	return &pb.TaskCreateResponse{}, nil
+	return &pb.TaskCreateResponse{ID: uint64(ID)}, nil
 }
 
 func (i implementation) TaskList(ctx context.Context, _ *pb.TaskListRequest) (*pb.TaskListResponse, error) {
