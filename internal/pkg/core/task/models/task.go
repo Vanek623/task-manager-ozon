@@ -11,6 +11,7 @@ type Task struct {
 	Title       string    `db:"title"`
 	Description string    `db:"description"`
 	Created     time.Time `db:"created"`
+	Edited      time.Time `db:"edited"`
 }
 
 func (t *Task) String() string {

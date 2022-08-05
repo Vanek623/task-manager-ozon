@@ -96,5 +96,5 @@ message TaskGetRequest {
 message TaskGetResponse {
   string title = 1;
   optional string description = 2;
-  int64 tm = 3;
+  int64 edited = 3;
 }
