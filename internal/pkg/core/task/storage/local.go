@@ -46,10 +46,17 @@ func (s *local) Delete(_ context.Context, ID uint) error {
 	return nil
 }
 
-func (s *local) List(_ context.Context) ([]models.Task, error) {
-	res := make([]models.Task, 0, len(s.data))
+func (s *local) List(_ context.Context, limit, offset uint) ([]models.Task, error) {
+	res := make([]models.Task, 0, limit)
 
-	for _, t := range s.data {
+	for i, t := range s.data {
+		if i >= offset+limit {
+			break
+		}
+		if i < offset {
+			continue
+		}
+
 		res = append(res, t)
 	}
 

@@ -2,8 +2,9 @@ package storage
 
 import (
 	"context"
-	"github.com/jackc/pgx/v4/pgxpool"
 	"time"
+
+	"github.com/jackc/pgx/v4/pgxpool"
 
 	"github.com/pkg/errors"
 
@@ -13,7 +14,7 @@ import (
 type iTaskStorage interface {
 	Add(ctx context.Context, t models.Task) (uint, error)
 	Delete(ctx context.Context, ID uint) error
-	List(ctx context.Context) ([]models.Task, error)
+	List(ctx context.Context, limit, offset uint) ([]models.Task, error)
 	Update(ctx context.Context, t models.Task) error
 	Get(ctx context.Context, ID uint) (*models.Task, error)
 }

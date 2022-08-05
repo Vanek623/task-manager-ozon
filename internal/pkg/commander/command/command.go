@@ -3,8 +3,9 @@ package command
 import (
 	"context"
 	"fmt"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	"strings"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
 	"github.com/pkg/errors"
 )
@@ -92,7 +93,7 @@ func extractArgsCounted(args string, min, max int) ([]string, error) {
 	}
 
 	if len(argsArr) < min {
-		return argsArr, errors.New("Has no enough args")
+		return argsArr, ErrNoEnoughArgs
 	}
 
 	if len(argsArr) < max {

@@ -3,9 +3,10 @@ package command
 import (
 	"context"
 	"fmt"
-	serviceModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	"strconv"
 	"time"
+
+	serviceModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 )
 
 type getCommand struct {

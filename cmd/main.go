@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	servicePkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
 	"log"
 	"os"
+
+	servicePkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/client"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/server"

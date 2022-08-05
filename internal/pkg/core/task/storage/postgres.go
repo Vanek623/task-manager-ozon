@@ -36,11 +36,11 @@ func (p *postgres) Delete(ctx context.Context, ID uint) error {
 	return nil
 }
 
-func (p *postgres) List(ctx context.Context) ([]models.Task, error) {
-	const query = "SELECT * FROM tasks ORDER BY id"
+func (p *postgres) List(ctx context.Context, limit, offset uint) ([]models.Task, error) {
+	const query = "SELECT * FROM tasks ORDER BY id LIMIT $1 OFFSET $2"
 
 	var tasks []models.Task
-	if err := pgxscan.Select(ctx, p.pool, &tasks, query); err != nil {
+	if err := pgxscan.Select(ctx, p.pool, &tasks, query, limit, offset); err != nil {
 		return nil, err
 	}
 

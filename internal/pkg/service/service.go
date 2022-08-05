@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	taskModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
@@ -23,22 +24,25 @@ type iService interface {
 type iTaskStorage interface {
 	Add(ctx context.Context, t taskModelsPkg.Task) (uint, error)
 	Delete(ctx context.Context, ID uint) error
-	List(ctx context.Context) ([]taskModelsPkg.Task, error)
+	List(ctx context.Context, limit, offset uint) ([]taskModelsPkg.Task, error)
 	Update(ctx context.Context, t taskModelsPkg.Task) error
 	Get(ctx context.Context, ID uint) (*taskModelsPkg.Task, error)
 }
 
+// Service структура бизнес логики
 type Service struct {
 	iService
 	storage iTaskStorage
 }
 
+// NewService создать структуру бизнес логики
 func NewService(pool *pgxpool.Pool) *Service {
 	return &Service{
 		storage: storage.NewPostgres(pool, true),
 	}
 }
 
+// AddTask добавить задачу
 func (s *Service) AddTask(ctx context.Context, data models.AddTaskData) (uint, error) {
 	if err := isTitleAndDescriptionOk(data.Title, data.Description); err != nil {
 		return 0, err
@@ -52,12 +56,14 @@ func (s *Service) AddTask(ctx context.Context, data models.AddTaskData) (uint, e
 	return s.storage.Add(ctx, task)
 }
 
+// DeleteTask удалить задачу
 func (s *Service) DeleteTask(ctx context.Context, data models.DeleteTaskData) error {
 	return s.storage.Delete(ctx, data.ID)
 }
 
-func (s *Service) TasksList(ctx context.Context, _ models.ListTaskData) ([]models.Task, error) {
-	tasks, err := s.storage.List(ctx)
+// TasksList получить список задач
+func (s *Service) TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error) {
+	tasks, err := s.storage.List(ctx, data.MaxTasksCount, data.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -73,6 +79,7 @@ func (s *Service) TasksList(ctx context.Context, _ models.ListTaskData) ([]model
 	return result, nil
 }
 
+// UpdateTask обновить задачу
 func (s *Service) UpdateTask(ctx context.Context, data models.UpdateTaskData) error {
 	if err := isTitleAndDescriptionOk(data.Title, data.Description); err != nil {
 		return err
@@ -87,6 +94,7 @@ func (s *Service) UpdateTask(ctx context.Context, data models.UpdateTaskData) er
 	return s.storage.Update(ctx, task)
 }
 
+// GetTask получить подробное описание задачи
 func (s *Service) GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error) {
 	task, err := s.storage.Get(ctx, data.ID)
 	if err != nil {

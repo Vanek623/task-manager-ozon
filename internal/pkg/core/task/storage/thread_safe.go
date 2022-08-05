@@ -8,21 +8,21 @@ import (
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 )
 
-type threadSafeStorage struct {
+type threadSafe struct {
 	impl    iTaskStorage
 	limiter workerLimiter
 	mu      sync.RWMutex
 }
 
-func newThreadSafeStorage(storage iTaskStorage, maxWorkers uint, timeout time.Duration) *threadSafeStorage {
-	return &threadSafeStorage{
+func newThreadSafeStorage(storage iTaskStorage, maxWorkers uint, timeout time.Duration) *threadSafe {
+	return &threadSafe{
 		impl:    storage,
 		limiter: newWorkerLimiter(maxWorkers, timeout),
 	}
 }
 
 // Add добавление задачи
-func (s *threadSafeStorage) Add(ctx context.Context, t models.Task) (ID uint, err error) {
+func (s *threadSafe) Add(ctx context.Context, t models.Task) (ID uint, err error) {
 	if err = s.limiter.start(ctx); err != nil {
 		return
 	}
@@ -36,7 +36,7 @@ func (s *threadSafeStorage) Add(ctx context.Context, t models.Task) (ID uint, er
 }
 
 // Delete удаление задачи
-func (s *threadSafeStorage) Delete(ctx context.Context, ID uint) error {
+func (s *threadSafe) Delete(ctx context.Context, ID uint) error {
 	if err := s.limiter.start(ctx); err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (s *threadSafeStorage) Delete(ctx context.Context, ID uint) error {
 }
 
 // List чтение списка задач
-func (s *threadSafeStorage) List(ctx context.Context) ([]models.Task, error) {
+func (s *threadSafe) List(ctx context.Context, limit, offset uint) ([]models.Task, error) {
 	if err := s.limiter.start(ctx); err != nil {
 		return nil, err
 	}
@@ -60,11 +60,11 @@ func (s *threadSafeStorage) List(ctx context.Context) ([]models.Task, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	return s.impl.List(ctx)
+	return s.impl.List(ctx, limit, offset)
 }
 
 // Update обновление задачи
-func (s *threadSafeStorage) Update(ctx context.Context, t models.Task) error {
+func (s *threadSafe) Update(ctx context.Context, t models.Task) error {
 	if err := s.limiter.start(ctx); err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func (s *threadSafeStorage) Update(ctx context.Context, t models.Task) error {
 }
 
 // Get чтение задачи
-func (s *threadSafeStorage) Get(ctx context.Context, ID uint) (*models.Task, error) {
+func (s *threadSafe) Get(ctx context.Context, ID uint) (*models.Task, error) {
 	if err := s.limiter.start(ctx); err != nil {
 		return nil, err
 	}

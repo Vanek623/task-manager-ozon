@@ -1,8 +1,9 @@
 package service
 
 import (
-	"github.com/pkg/errors"
 	"unicode/utf8"
+
+	"github.com/pkg/errors"
 )
 
 const (

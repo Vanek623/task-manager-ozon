@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api"
 )
@@ -38,8 +39,13 @@ func (i *implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateReques
 	return &pb.TaskCreateResponse{ID: uint64(ID)}, nil
 }
 
-func (i *implementation) TaskList(ctx context.Context, _ *pb.TaskListRequest) (*pb.TaskListResponse, error) {
-	tasks, err := i.s.TasksList(ctx, models.ListTaskData{})
+func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
+	data := models.ListTaskData{
+		MaxTasksCount: uint(in.MaxTasksCount),
+		Offset:        uint(in.Offset),
+	}
+
+	tasks, err := i.s.TasksList(ctx, data)
 	if err != nil {
 		return nil, err
 	}

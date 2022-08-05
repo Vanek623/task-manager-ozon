@@ -56,7 +56,10 @@ message TaskCreateResponse {
 // TaskList endpoint messages
 // ---------------------------------------------------------------------------------------------------------------------
 
-message TaskListRequest {}
+message TaskListRequest {
+  uint32 MaxTasksCount = 1;
+  uint32 Offset = 2;
+}
 message TaskListResponse {
   repeated Task tasks = 1;
 

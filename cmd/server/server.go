@@ -3,10 +3,11 @@ package server
 import (
 	"context"
 	"fmt"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	"log"
 	"net"
 	"net/http"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v4/pgxpool"

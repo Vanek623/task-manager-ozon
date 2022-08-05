@@ -3,9 +3,10 @@ package bot
 import (
 	"context"
 	"fmt"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	"log"
 	"os"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/commander"
 )
