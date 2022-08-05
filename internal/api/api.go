@@ -2,36 +2,35 @@ package api
 
 import (
 	"context"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api"
 )
 
-type iTaskStorage interface {
-	Add(ctx context.Context, t models.Task) (uint, error)
-	Delete(ctx context.Context, ID uint) error
-	List(ctx context.Context) ([]models.Task, error)
-	Update(ctx context.Context, t models.Task) error
-	Get(ctx context.Context, ID uint) (*models.Task, error)
+type iService interface {
+	AddTask(ctx context.Context, data models.AddTaskData) (uint, error)
+	DeleteTask(ctx context.Context, data models.DeleteTaskData) error
+	TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error)
+	UpdateTask(ctx context.Context, data models.UpdateTaskData) error
+	GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error)
 }
 
 type implementation struct {
 	pb.UnimplementedAdminServer
-	tm iTaskStorage
+	s iService
 }
 
 //New создание обработчика
-func New(tm iTaskStorage) pb.AdminServer {
-	return &implementation{tm: tm}
+func New(s iService) pb.AdminServer {
+	return &implementation{s: s}
 }
 
-func (i implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateRequest) (*pb.TaskCreateResponse, error) {
-	task := models.Task{
+func (i *implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateRequest) (*pb.TaskCreateResponse, error) {
+	data := models.AddTaskData{
 		Title:       in.GetTitle(),
 		Description: in.GetDescription(),
 	}
 
-	ID, err := i.tm.Add(ctx, task)
+	ID, err := i.s.AddTask(ctx, data)
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +38,8 @@ func (i implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateRequest
 	return &pb.TaskCreateResponse{ID: uint64(ID)}, nil
 }
 
-func (i implementation) TaskList(ctx context.Context, _ *pb.TaskListRequest) (*pb.TaskListResponse, error) {
-	tasks, err := i.tm.List(ctx)
+func (i *implementation) TaskList(ctx context.Context, _ *pb.TaskListRequest) (*pb.TaskListResponse, error) {
+	tasks, err := i.s.TasksList(ctx, models.ListTaskData{})
 	if err != nil {
 		return nil, err
 	}
@@ -56,39 +55,41 @@ func (i implementation) TaskList(ctx context.Context, _ *pb.TaskListRequest) (*p
 	return &pb.TaskListResponse{Tasks: result}, nil
 }
 
-func (i implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateRequest) (*pb.TaskUpdateResponse, error) {
-	task, err := i.tm.Get(ctx, uint(in.GetID()))
-	if err != nil {
-		return nil, err
+func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateRequest) (*pb.TaskUpdateResponse, error) {
+	data := models.UpdateTaskData{
+		ID:          uint(in.GetID()),
+		Title:       in.GetTitle(),
+		Description: in.GetDescription(),
 	}
 
-	task.Title = in.GetTitle()
-	task.Description = in.GetDescription()
-
-	if err = i.tm.Update(ctx, *task); err != nil {
+	if err := i.s.UpdateTask(ctx, data); err != nil {
 		return nil, err
 	}
 
 	return &pb.TaskUpdateResponse{}, nil
 }
 
-func (i implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteRequest) (*pb.TaskDeleteResponse, error) {
-	if err := i.tm.Delete(ctx, uint(in.GetID())); err != nil {
+func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteRequest) (*pb.TaskDeleteResponse, error) {
+	data := models.DeleteTaskData{ID: uint(in.GetID())}
+
+	if err := i.s.DeleteTask(ctx, data); err != nil {
 		return nil, err
 	}
 
 	return &pb.TaskDeleteResponse{}, nil
 }
 
-func (i implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*pb.TaskGetResponse, error) {
-	task, err := i.tm.Get(ctx, uint(in.GetID()))
+func (i *implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*pb.TaskGetResponse, error) {
+	data := models.GetTaskData{ID: uint(in.GetID())}
+
+	task, err := i.s.GetTask(ctx, data)
 	if err != nil {
 		return nil, err
 	}
 
 	result := pb.TaskGetResponse{
-		Title: task.Title,
-		Tm:    task.Created.Unix(),
+		Title:  task.Title,
+		Edited: task.Edited.Unix(),
 	}
 
 	if task.Description != "" {

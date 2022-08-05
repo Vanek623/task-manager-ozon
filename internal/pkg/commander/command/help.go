@@ -14,12 +14,12 @@ func (c *helpCommand) Execute(_ context.Context, _ string) string {
 	return c.helpList
 }
 
-func newHelpCommand(m iTaskStorage, commands map[string]ICommand) *helpCommand {
+func newHelpCommand(s iService, commands map[string]ICommand) *helpCommand {
 	tmp := helpCommand{
 		command: command{
 			name:        "help",
 			description: "get commands list",
-			manager:     m},
+			service:     s},
 		helpList: "",
 	}
 

@@ -3,10 +3,9 @@ package bot
 import (
 	"context"
 	"fmt"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	"log"
 	"os"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/commander"
 )
@@ -24,22 +23,22 @@ func readToken() string {
 	return token
 }
 
-type iTaskStorage interface {
-	Add(ctx context.Context, t models.Task) (uint, error)
-	Delete(ctx context.Context, ID uint) error
-	List(ctx context.Context) ([]models.Task, error)
-	Update(ctx context.Context, t models.Task) error
-	Get(ctx context.Context, ID uint) (*models.Task, error)
+type iService interface {
+	AddTask(ctx context.Context, data models.AddTaskData) (uint, error)
+	DeleteTask(ctx context.Context, data models.DeleteTaskData) error
+	TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error)
+	UpdateTask(ctx context.Context, data models.UpdateTaskData) error
+	GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error)
 }
 
 // Run запускает тг бота
-func Run(tm iTaskStorage) {
+func Run(s iService) {
 	token := readToken()
 	if token == "" {
 		log.Fatal("Empty token!")
 	}
 
-	cmdr, err := commander.New(token, tm)
+	cmdr, err := commander.New(token, s)
 	if err != nil {
 		log.Fatal(err)
 	}

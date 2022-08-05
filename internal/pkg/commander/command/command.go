@@ -3,9 +3,8 @@ package command
 import (
 	"context"
 	"fmt"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	"strings"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 
 	"github.com/pkg/errors"
 )
@@ -19,19 +18,19 @@ type ICommand interface {
 	Help() string
 }
 
-type iTaskStorage interface {
-	Add(ctx context.Context, t models.Task) (uint, error)
-	Delete(ctx context.Context, ID uint) error
-	List(ctx context.Context) ([]models.Task, error)
-	Update(ctx context.Context, t models.Task) error
-	Get(ctx context.Context, ID uint) (*models.Task, error)
+type iService interface {
+	AddTask(ctx context.Context, data models.AddTaskData) (uint, error)
+	DeleteTask(ctx context.Context, data models.DeleteTaskData) error
+	TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error)
+	UpdateTask(ctx context.Context, data models.UpdateTaskData) error
+	GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error)
 }
 
 type command struct {
 	name        string
 	description string
 	subArgs     string
-	manager     iTaskStorage
+	service     iService
 }
 
 func (c *command) Name() string {

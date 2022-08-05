@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"fmt"
+	serviceModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	"strconv"
 )
 
@@ -21,19 +22,19 @@ func (c *deleteCommand) Execute(ctx context.Context, args string) string {
 		return fmt.Sprintf("Cannot parse %s", argsArr[0])
 	}
 
-	if err = c.manager.Delete(ctx, uint(id)); err != nil {
+	if err = c.service.DeleteTask(ctx, serviceModelsPkg.DeleteTaskData{ID: uint(id)}); err != nil {
 		return err.Error()
 	}
 
 	return "Task deleted"
 }
 
-func newDeleteCommand(m iTaskStorage) *deleteCommand {
+func newDeleteCommand(s iService) *deleteCommand {
 	return &deleteCommand{
 		command{
 			name:        "delete",
 			description: "delete task",
 			subArgs:     "<ID>",
-			manager:     m},
+			service:     s},
 	}
 }

@@ -2,10 +2,8 @@ package storage
 
 import (
 	"context"
-	"time"
-	"unicode/utf8"
-
 	"github.com/jackc/pgx/v4/pgxpool"
+	"time"
 
 	"github.com/pkg/errors"
 
@@ -26,14 +24,9 @@ var (
 
 	// ErrHasNoSpace отсутсвует место в хранилище
 	ErrHasNoSpace = errors.New("Has no space for tasks, please delete one")
-
-	// ErrValidation ошибка валидации данных
-	ErrValidation = errors.New("invalid data")
 )
 
 const (
-	maxNameLen        = 64
-	maxDescriptionLen = 256
 	maxWorkers        = 10
 	workerIdleTimeout = 100 * time.Millisecond
 )
@@ -59,19 +52,4 @@ func NewPostgres(pool *pgxpool.Pool, isThreadSafe bool) *Storage {
 	}
 
 	return &Storage{&postgres{pool: pool}}
-}
-
-func checkTitleAndDescription(t models.Task) error {
-	if t.Title == "" {
-		return errors.Wrap(ErrValidation, "field: [title] is empty")
-	}
-	if utf8.RuneCountInString(t.Title) > maxNameLen {
-		return errors.Wrap(ErrValidation, "field: [title] too large")
-	}
-
-	if utf8.RuneCountInString(t.Description) > maxDescriptionLen {
-		return errors.Wrap(ErrValidation, "field: [description] too large")
-	}
-
-	return nil
 }

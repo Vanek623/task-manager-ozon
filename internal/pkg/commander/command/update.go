@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"fmt"
+	serviceModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	"strconv"
 )
 
@@ -21,27 +22,24 @@ func (c *updateCommand) Execute(ctx context.Context, args string) string {
 		return fmt.Sprintf("Cannot parse %s", argsArr[0])
 	}
 
-	t, err := c.manager.Get(ctx, uint(id))
-	if err != nil {
-		return err.Error()
+	data := serviceModelsPkg.UpdateTaskData{
+		ID:          uint(id),
+		Title:       argsArr[1],
+		Description: argsArr[2],
 	}
-
-	t.Title = argsArr[1]
-	t.Description = argsArr[2]
-
-	if err = c.manager.Update(ctx, *t); err != nil {
+	if err = c.service.UpdateTask(ctx, data); err != nil {
 		return err.Error()
 	}
 
 	return "Task updated"
 }
 
-func newUpdateCommand(m iTaskStorage) *updateCommand {
+func newUpdateCommand(s iService) *updateCommand {
 	return &updateCommand{
 		command{
 			name:        "update",
 			description: "update task",
 			subArgs:     "<ID> <name> <description>",
-			manager:     m},
+			service:     s},
 	}
 }

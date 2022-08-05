@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	servicePkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
 	"log"
 	"os"
 
@@ -20,13 +21,14 @@ func main() {
 	ctx, cl := context.WithCancel(context.Background())
 	defer cl()
 
-	storage := server.ConnectToDB(ctx, os.Getenv("DB_PASSWORD"))
+	pool := server.ConnectToDB(ctx, os.Getenv("DB_PASSWORD"))
+	service := servicePkg.NewService(pool)
 
 	go server.RunREST(ctx)
-	go server.RunGRPC(storage)
+	go server.RunGRPC(service)
 
 	go client.Run(1)
 	go client.Run(2)
 
-	bot.Run(storage)
+	bot.Run(service)
 }

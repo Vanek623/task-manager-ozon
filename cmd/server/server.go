@@ -3,16 +3,13 @@ package server
 import (
 	"context"
 	"fmt"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	"log"
 	"net"
 	"net/http"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/storage"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
-
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/jackc/pgx/v4/pgxpool"
 
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -21,23 +18,23 @@ import (
 	"google.golang.org/grpc"
 )
 
-type iTaskStorage interface {
-	Add(ctx context.Context, t models.Task) (uint, error)
-	Delete(ctx context.Context, ID uint) error
-	List(ctx context.Context) ([]models.Task, error)
-	Update(ctx context.Context, t models.Task) error
-	Get(ctx context.Context, ID uint) (*models.Task, error)
+type iService interface {
+	AddTask(ctx context.Context, data models.AddTaskData) (uint, error)
+	DeleteTask(ctx context.Context, data models.DeleteTaskData) error
+	TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error)
+	UpdateTask(ctx context.Context, data models.UpdateTaskData) error
+	GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error)
 }
 
 // RunGRPC запускает GRPC
-func RunGRPC(tm iTaskStorage) {
+func RunGRPC(service iService) {
 	listener, err := net.Listen(ConnectionType, FullAddress)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterAdminServer(s, apiPkg.New(tm))
+	pb.RegisterAdminServer(s, apiPkg.New(service))
 
 	log.Println("grpc started")
 
@@ -62,7 +59,7 @@ func RunREST(ctx context.Context) {
 }
 
 // ConnectToDB подключение к БД
-func ConnectToDB(ctx context.Context, password string) *storage.Storage {
+func ConnectToDB(ctx context.Context, password string) *pgxpool.Pool {
 	psqlConn := fmt.Sprintf("host=%s port=%d user=%s password=%s "+
 		"dbname=%s sslmode=disable", hostDB, portDB, userName, password, nameDB)
 
@@ -82,5 +79,5 @@ func ConnectToDB(ctx context.Context, password string) *storage.Storage {
 	config.MinConns = minConnections
 	config.MaxConns = maxConnections
 
-	return storage.NewPostgres(pool, true)
+	return pool
 }

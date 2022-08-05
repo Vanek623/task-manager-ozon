@@ -8,7 +8,7 @@ import (
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 )
 
-const localCapacity = 8
+const localCapacity = 100
 
 // local структура локального хранилища
 type local struct {
@@ -26,10 +26,6 @@ func newLocal() *local {
 func (s *local) Add(_ context.Context, t models.Task) (uint, error) {
 	if len(s.data) >= localCapacity {
 		return 0, ErrHasNoSpace
-	}
-
-	if err := checkTitleAndDescription(t); err != nil {
-		return 0, err
 	}
 
 	t.ID = uint(s.lastID)
@@ -63,10 +59,6 @@ func (s *local) List(_ context.Context) ([]models.Task, error) {
 func (s *local) Update(_ context.Context, t models.Task) error {
 	if _, ok := s.data[t.ID]; !ok {
 		return errors.Wrapf(ErrTaskNotExist, "ID: [%d]", t.ID)
-	}
-
-	if err := checkTitleAndDescription(t); err != nil {
-		return err
 	}
 
 	t.Created = s.data[t.ID].Created
