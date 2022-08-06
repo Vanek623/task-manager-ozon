@@ -31,7 +31,7 @@ func (c *getCommand) Execute(ctx context.Context, args string) string {
 		return err.Error()
 	}
 
-	return fmt.Sprintf("Title: %s \nDescription: %s \nCreated: %s",
+	return fmt.Sprintf("Title: %s \nDescription: %s \nEdited: %s",
 		t.Title,
 		t.Description,
 		t.Edited.Format(time.Stamp))

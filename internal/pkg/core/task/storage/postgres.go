@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-
 	"github.com/georgysavva/scany/pgxscan"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
@@ -48,7 +47,7 @@ func (p *postgres) List(ctx context.Context, limit, offset uint) ([]models.Task,
 }
 
 func (p *postgres) Update(ctx context.Context, t models.Task) error {
-	const query = "UPDATE tasks SET title = $1, description = $2 WHERE id = $3 RETURNING 1"
+	const query = "UPDATE tasks SET title = $1, description = $2, edited = now() WHERE id = $3 RETURNING 1"
 
 	res := p.pool.QueryRow(ctx, query, t.Title, t.Description, t.ID)
 	var tmp int
@@ -60,7 +59,7 @@ func (p *postgres) Update(ctx context.Context, t models.Task) error {
 }
 
 func (p *postgres) Get(ctx context.Context, ID uint) (*models.Task, error) {
-	const query = "SELECT id, title, description, created FROM tasks WHERE id = $1"
+	const query = "SELECT * FROM tasks WHERE id = $1"
 
 	var task models.Task
 	if err := pgxscan.Get(ctx, p.pool, &task, query, ID); err != nil {

@@ -16,7 +16,7 @@ build:
 
 .PHONY: run
 run:
-	go run ./cmd/bot/main.go
+	go run ./cmd/main.go
 
 # precommit jobs
 .PHONY: precommit

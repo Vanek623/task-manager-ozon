@@ -25,10 +25,10 @@ func (m *Manager) createCommands(s iService) {
 	m.registerCommand(newDeleteCommand(s))
 	m.registerCommand(newGetCommand(s))
 	m.registerCommand(newListCommand(s))
-	m.registerCommand(newStartCommand())
 	m.registerCommand(newUpdateCommand(s))
 
-	m.registerCommand(newHelpCommand(s, m.commands))
+	m.registerCommand(newStartCommand())
+	m.registerCommand(newHelpCommand(m.commands))
 }
 
 func (m *Manager) registerCommand(c ICommand) {
