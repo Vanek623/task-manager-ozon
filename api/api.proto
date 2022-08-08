@@ -48,13 +48,18 @@ message TaskCreateRequest {
   string title = 1;
   optional string description = 2;
 }
-message TaskCreateResponse {}
+message TaskCreateResponse {
+  uint64 ID = 1;
+}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // TaskList endpoint messages
 // ---------------------------------------------------------------------------------------------------------------------
 
-message TaskListRequest {}
+message TaskListRequest {
+  uint32 MaxTasksCount = 1;
+  uint32 Offset = 2;
+}
 message TaskListResponse {
   repeated Task tasks = 1;
 
@@ -94,5 +99,5 @@ message TaskGetRequest {
 message TaskGetResponse {
   string title = 1;
   optional string description = 2;
-  int64 tm = 3;
+  int64 edited = 3;
 }

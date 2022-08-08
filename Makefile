@@ -16,11 +16,16 @@ build:
 
 .PHONY: run
 run:
-	go run ./cmd/bot/main.go
+	go run ./cmd/main.go
 
 # precommit jobs
 .PHONY: precommit
 precommit: lint
+
+MIGRATION_DIR=./migrations
+.PHONY: migration
+migration:
+	goose -dir=${MIGRATION_DIR} create $(NAME) sql
 
 # install golangci-lint binary
 .PHONY: install-lint

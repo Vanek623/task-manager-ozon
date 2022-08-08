@@ -8,7 +8,7 @@ import (
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 )
 
-const localCapacity = 8
+const localCapacity = 100
 
 // local структура локального хранилища
 type local struct {
@@ -23,13 +23,9 @@ func newLocal() *local {
 	}
 }
 
-func (s *local) Add(_ context.Context, t models.Task) error {
+func (s *local) Add(_ context.Context, t models.Task) (uint, error) {
 	if len(s.data) >= localCapacity {
-		return ErrHasNoSpace
-	}
-
-	if err := checkTitleAndDescription(t); err != nil {
-		return err
+		return 0, ErrHasNoSpace
 	}
 
 	t.ID = uint(s.lastID)
@@ -38,7 +34,7 @@ func (s *local) Add(_ context.Context, t models.Task) error {
 
 	s.data[t.ID] = t
 
-	return nil
+	return t.ID, nil
 }
 
 func (s *local) Delete(_ context.Context, ID uint) error {
@@ -50,10 +46,17 @@ func (s *local) Delete(_ context.Context, ID uint) error {
 	return nil
 }
 
-func (s *local) List(_ context.Context) ([]models.Task, error) {
-	res := make([]models.Task, 0, len(s.data))
+func (s *local) List(_ context.Context, limit, offset uint) ([]models.Task, error) {
+	res := make([]models.Task, 0, limit)
 
-	for _, t := range s.data {
+	for i, t := range s.data {
+		if i >= offset+limit {
+			break
+		}
+		if i < offset {
+			continue
+		}
+
 		res = append(res, t)
 	}
 
@@ -63,10 +66,6 @@ func (s *local) List(_ context.Context) ([]models.Task, error) {
 func (s *local) Update(_ context.Context, t models.Task) error {
 	if _, ok := s.data[t.ID]; !ok {
 		return errors.Wrapf(ErrTaskNotExist, "ID: [%d]", t.ID)
-	}
-
-	if err := checkTitleAndDescription(t); err != nil {
-		return err
 	}
 
 	t.Created = s.data[t.ID].Created

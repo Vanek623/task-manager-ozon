@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/commander/command"
 
@@ -13,12 +13,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-type iTaskStorage interface {
-	Add(ctx context.Context, t models.Task) error
-	Delete(ctx context.Context, ID uint) error
-	List(ctx context.Context) ([]models.Task, error)
-	Update(ctx context.Context, t models.Task) error
-	Get(ctx context.Context, ID uint) (*models.Task, error)
+type iService interface {
+	AddTask(ctx context.Context, data models.AddTaskData) (uint, error)
+	DeleteTask(ctx context.Context, data models.DeleteTaskData) error
+	TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error)
+	UpdateTask(ctx context.Context, data models.UpdateTaskData) error
+	GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error)
 }
 
 // Commander структура бота
@@ -28,7 +28,7 @@ type Commander struct {
 }
 
 // New инициализация бота
-func New(token string, taskManager iTaskStorage) (*Commander, error) {
+func New(token string, s iService) (*Commander, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func New(token string, taskManager iTaskStorage) (*Commander, error) {
 	//bot.Debug = true
 	log.Printf("Authorized on acconut %s", bot.Self.UserName)
 
-	cmdr := &Commander{bot, command.NewManager(taskManager)}
+	cmdr := &Commander{bot, command.NewManager(s)}
 
 	return cmdr, nil
 }

@@ -2,15 +2,15 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/config"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/jackc/pgx/v4/pgxpool"
 
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -19,23 +19,23 @@ import (
 	"google.golang.org/grpc"
 )
 
-type iTaskStorage interface {
-	Add(ctx context.Context, t models.Task) error
-	Delete(ctx context.Context, ID uint) error
-	List(ctx context.Context) ([]models.Task, error)
-	Update(ctx context.Context, t models.Task) error
-	Get(ctx context.Context, ID uint) (*models.Task, error)
+type iService interface {
+	AddTask(ctx context.Context, data models.AddTaskData) (uint, error)
+	DeleteTask(ctx context.Context, data models.DeleteTaskData) error
+	TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error)
+	UpdateTask(ctx context.Context, data models.UpdateTaskData) error
+	GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error)
 }
 
 // RunGRPC запускает GRPC
-func RunGRPC(tm iTaskStorage) {
-	listener, err := net.Listen(config.ConnectionType, config.FullAddress)
+func RunGRPC(service iService) {
+	listener, err := net.Listen(ConnectionType, FullAddress)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	s := grpc.NewServer()
-	pb.RegisterAdminServer(s, apiPkg.New(tm))
+	pb.RegisterAdminServer(s, apiPkg.New(service))
 
 	log.Println("grpc started")
 
@@ -45,19 +45,40 @@ func RunGRPC(tm iTaskStorage) {
 }
 
 // RunREST запускает REST
-func RunREST() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
+func RunREST(ctx context.Context) {
 	mux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	if err := pb.RegisterAdminHandlerFromEndpoint(ctx, mux, config.FullAddress, opts); err != nil {
+	if err := pb.RegisterAdminHandlerFromEndpoint(ctx, mux, FullAddress, opts); err != nil {
 		log.Fatal(err)
 	}
 
 	log.Println("rest started")
 
-	if err := http.ListenAndServe(config.FullHTTPAddress, mux); err != nil {
+	if err := http.ListenAndServe(FullHTTPAddress, mux); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// ConnectToDB подключение к БД
+func ConnectToDB(ctx context.Context, password string) *pgxpool.Pool {
+	psqlConn := fmt.Sprintf("host=%s port=%d user=%s password=%s "+
+		"dbname=%s sslmode=disable", hostDB, portDB, userName, password, nameDB)
+
+	pool, err := pgxpool.Connect(ctx, psqlConn)
+	if err != nil {
+		log.Fatal("can't connect to database", err)
+	}
+
+	if err = pool.Ping(ctx); err != nil {
+		pool.Close()
+		log.Fatal(err)
+	}
+
+	config := pool.Config()
+	config.MaxConnIdleTime = maxConnIdleTime
+	config.MaxConnLifetime = maxConnLifetime
+	config.MinConns = minConnections
+	config.MaxConns = maxConnections
+
+	return pool
 }
