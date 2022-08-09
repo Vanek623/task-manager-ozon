@@ -12,7 +12,7 @@ import (
 
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api"
+	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
 	"google.golang.org/grpc"
 )
 
@@ -35,7 +35,7 @@ func Run(ID uint) {
 		con, err = grpc.Dial(serverPkg.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
-	server := pb.NewAdminClient(con)
+	server := pb.NewServiceClient(con)
 
 	log.Printf("%d: client started", ID)
 

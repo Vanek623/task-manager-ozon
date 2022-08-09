@@ -1,10 +1,10 @@
-package api
+package service
 
 import (
 	"context"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
-	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api"
+	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
 )
 
 type iService interface {
@@ -16,12 +16,12 @@ type iService interface {
 }
 
 type implementation struct {
-	pb.UnimplementedAdminServer
+	pb.UnimplementedServiceServer
 	s iService
 }
 
-//New создание обработчика
-func New(s iService) pb.AdminServer {
+//NewApi создание обработчика
+func NewApi(s iService) pb.ServiceServer {
 	return &implementation{s: s}
 }
 

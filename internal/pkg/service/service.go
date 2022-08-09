@@ -3,10 +3,8 @@ package service
 import (
 	"context"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	taskModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/storage"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 )
 
@@ -36,10 +34,15 @@ type Service struct {
 }
 
 // NewService создать структуру бизнес логики
-func NewService(pool *pgxpool.Pool) *Service {
-	return &Service{
-		storage: storage.NewPostgres(pool, true),
+func NewService() (*Service, error) {
+	s, err := newStorage()
+	if err != nil {
+		return nil, err
 	}
+
+	return &Service{
+		storage: s,
+	}, nil
 }
 
 // AddTask добавить задачу

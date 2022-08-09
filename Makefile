@@ -11,8 +11,10 @@ run-in-docker: build
 # build app
 .PHONY: build
 build:
-	go mod download && CGO_ENABLED=0  go build \
-		-o ./bin/main$(shell go env GOEXE) ./cmd/main.go
+	go mod download && CGO_ENABLED=0 \
+	go build -o ./bin/server ./cmd/server_main.go && \
+	go build -o ./bin/storage ./cmd/storage_main.go && \
+	go build -o ./bin/client ./cmd/client_main.go
 
 .PHONY: run
 run:
