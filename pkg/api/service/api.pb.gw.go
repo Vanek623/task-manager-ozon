@@ -15,6 +15,7 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/utilities"
+	extService "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
@@ -31,8 +32,8 @@ var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = metadata.Join
 
-func request_Service_TaskCreate_0(ctx context.Context, marshaler runtime.Marshaler, client ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq TaskCreateRequest
+func request_Service_TaskCreate_0(ctx context.Context, marshaler runtime.Marshaler, client extService.ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq extService.TaskCreateRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -48,8 +49,8 @@ func request_Service_TaskCreate_0(ctx context.Context, marshaler runtime.Marshal
 
 }
 
-func local_request_Service_TaskCreate_0(ctx context.Context, marshaler runtime.Marshaler, server ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq TaskCreateRequest
+func local_request_Service_TaskCreate_0(ctx context.Context, marshaler runtime.Marshaler, server extService.ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq extService.TaskCreateRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -69,8 +70,8 @@ var (
 	filter_Service_TaskList_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_Service_TaskList_0(ctx context.Context, marshaler runtime.Marshaler, client ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq TaskListRequest
+func request_Service_TaskList_0(ctx context.Context, marshaler runtime.Marshaler, client extService.ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq extService.TaskListRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
@@ -85,8 +86,8 @@ func request_Service_TaskList_0(ctx context.Context, marshaler runtime.Marshaler
 
 }
 
-func local_request_Service_TaskList_0(ctx context.Context, marshaler runtime.Marshaler, server ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq TaskListRequest
+func local_request_Service_TaskList_0(ctx context.Context, marshaler runtime.Marshaler, server extService.ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq extService.TaskListRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
@@ -101,8 +102,8 @@ func local_request_Service_TaskList_0(ctx context.Context, marshaler runtime.Mar
 
 }
 
-func request_Service_TaskUpdate_0(ctx context.Context, marshaler runtime.Marshaler, client ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq TaskUpdateRequest
+func request_Service_TaskUpdate_0(ctx context.Context, marshaler runtime.Marshaler, client extService.ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq extService.TaskUpdateRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -118,8 +119,8 @@ func request_Service_TaskUpdate_0(ctx context.Context, marshaler runtime.Marshal
 
 }
 
-func local_request_Service_TaskUpdate_0(ctx context.Context, marshaler runtime.Marshaler, server ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq TaskUpdateRequest
+func local_request_Service_TaskUpdate_0(ctx context.Context, marshaler runtime.Marshaler, server extService.ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq extService.TaskUpdateRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -135,8 +136,8 @@ func local_request_Service_TaskUpdate_0(ctx context.Context, marshaler runtime.M
 
 }
 
-func request_Service_TaskDelete_0(ctx context.Context, marshaler runtime.Marshaler, client ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq TaskDeleteRequest
+func request_Service_TaskDelete_0(ctx context.Context, marshaler runtime.Marshaler, client extService.ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq extService.TaskDeleteRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -152,8 +153,8 @@ func request_Service_TaskDelete_0(ctx context.Context, marshaler runtime.Marshal
 
 }
 
-func local_request_Service_TaskDelete_0(ctx context.Context, marshaler runtime.Marshaler, server ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq TaskDeleteRequest
+func local_request_Service_TaskDelete_0(ctx context.Context, marshaler runtime.Marshaler, server extService.ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq extService.TaskDeleteRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -173,8 +174,8 @@ var (
 	filter_Service_TaskGet_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_Service_TaskGet_0(ctx context.Context, marshaler runtime.Marshaler, client ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq TaskGetRequest
+func request_Service_TaskGet_0(ctx context.Context, marshaler runtime.Marshaler, client extService.ServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq extService.TaskGetRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
@@ -189,8 +190,8 @@ func request_Service_TaskGet_0(ctx context.Context, marshaler runtime.Marshaler,
 
 }
 
-func local_request_Service_TaskGet_0(ctx context.Context, marshaler runtime.Marshaler, server ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq TaskGetRequest
+func local_request_Service_TaskGet_0(ctx context.Context, marshaler runtime.Marshaler, server extService.ServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq extService.TaskGetRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
@@ -209,7 +210,7 @@ func local_request_Service_TaskGet_0(ctx context.Context, marshaler runtime.Mars
 // UnaryRPC     :call ServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterServiceHandlerFromEndpoint instead.
-func RegisterServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ServiceServer) error {
+func RegisterServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server extService.ServiceServer) error {
 
 	mux.Handle("POST", pattern_Service_TaskCreate_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
@@ -362,15 +363,15 @@ func RegisterServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeM
 // RegisterServiceHandler registers the http handlers for service Service to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
 func RegisterServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterServiceHandlerClient(ctx, mux, NewServiceClient(conn))
+	return RegisterServiceHandlerClient(ctx, mux, extService.NewServiceClient(conn))
 }
 
 // RegisterServiceHandlerClient registers the http handlers for service Service
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "ServiceClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ServiceClient"
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "extService.ServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "extService.ServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "ServiceClient" to call the correct interceptors.
-func RegisterServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ServiceClient) error {
+// "extService.ServiceClient" to call the correct interceptors.
+func RegisterServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client extService.ServiceClient) error {
 
 	mux.Handle("POST", pattern_Service_TaskCreate_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())

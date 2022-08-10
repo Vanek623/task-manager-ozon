@@ -8,7 +8,6 @@ package service
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -23,10 +22,25 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ServiceClient interface {
+	// Создание задачи
+	//
+	// Создание задачи.
 	TaskCreate(ctx context.Context, in *TaskCreateRequest, opts ...grpc.CallOption) (*TaskCreateResponse, error)
+	// Получение списка задач
+	//
+	// Получение списка задач.
 	TaskList(ctx context.Context, in *TaskListRequest, opts ...grpc.CallOption) (*TaskListResponse, error)
+	// Обновление задачи
+	//
+	// Обновление задачи.
 	TaskUpdate(ctx context.Context, in *TaskUpdateRequest, opts ...grpc.CallOption) (*TaskUpdateResponse, error)
+	// Удаление задачи
+	//
+	// Удаление задачи.
 	TaskDelete(ctx context.Context, in *TaskDeleteRequest, opts ...grpc.CallOption) (*TaskDeleteResponse, error)
+	// Получение задачи
+	//
+	// Получение подробной информации о задаче.
 	TaskGet(ctx context.Context, in *TaskGetRequest, opts ...grpc.CallOption) (*TaskGetResponse, error)
 }
 
@@ -87,10 +101,25 @@ func (c *serviceClient) TaskGet(ctx context.Context, in *TaskGetRequest, opts ..
 // All implementations must embed UnimplementedServiceServer
 // for forward compatibility
 type ServiceServer interface {
+	// Создание задачи
+	//
+	// Создание задачи.
 	TaskCreate(context.Context, *TaskCreateRequest) (*TaskCreateResponse, error)
+	// Получение списка задач
+	//
+	// Получение списка задач.
 	TaskList(context.Context, *TaskListRequest) (*TaskListResponse, error)
+	// Обновление задачи
+	//
+	// Обновление задачи.
 	TaskUpdate(context.Context, *TaskUpdateRequest) (*TaskUpdateResponse, error)
+	// Удаление задачи
+	//
+	// Удаление задачи.
 	TaskDelete(context.Context, *TaskDeleteRequest) (*TaskDeleteResponse, error)
+	// Получение задачи
+	//
+	// Получение подробной информации о задаче.
 	TaskGet(context.Context, *TaskGetRequest) (*TaskGetResponse, error)
 	mustEmbedUnimplementedServiceServer()
 }

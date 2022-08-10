@@ -25,7 +25,7 @@ import (
 type iService interface {
 	AddTask(ctx context.Context, data models.AddTaskData) (uint, error)
 	DeleteTask(ctx context.Context, data models.DeleteTaskData) error
-	TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error)
+	TasksList(ctx context.Context, data models.ListTaskData) ([]models.TaskBrief, error)
 	UpdateTask(ctx context.Context, data models.UpdateTaskData) error
 	GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error)
 }
@@ -77,6 +77,13 @@ func RunGRPC(service iService) {
 		log.Fatal(err)
 	}
 }
+
+// @title       TaskBrief manager API
+// @version     1.0
+// @description API Server for TaskBrief manager application
+
+// @host     localhost:8080
+// @BasePath /
 
 // RunREST запускает REST
 func RunREST(ctx context.Context) {

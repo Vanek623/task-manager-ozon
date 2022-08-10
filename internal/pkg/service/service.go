@@ -14,7 +14,7 @@ var ErrValidation = errors.New("invalid data")
 type iService interface {
 	AddTask(ctx context.Context, data models.AddTaskData) (uint, error)
 	DeleteTask(ctx context.Context, data models.DeleteTaskData) error
-	TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error)
+	TasksList(ctx context.Context, data models.ListTaskData) ([]models.TaskBrief, error)
 	UpdateTask(ctx context.Context, data models.UpdateTaskData) error
 	GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error)
 }
@@ -65,15 +65,15 @@ func (s *Service) DeleteTask(ctx context.Context, data models.DeleteTaskData) er
 }
 
 // TasksList получить список задач
-func (s *Service) TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error) {
-	tasks, err := s.storage.List(ctx, data.MaxTasksCount, data.Offset)
+func (s *Service) TasksList(ctx context.Context, data models.ListTaskData) ([]models.TaskBrief, error) {
+	tasks, err := s.storage.List(ctx, data.Limit, data.Offset)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]models.Task, 0, len(tasks))
+	result := make([]models.TaskBrief, 0, len(tasks))
 	for _, task := range tasks {
-		result = append(result, models.Task{
+		result = append(result, models.TaskBrief{
 			ID:    task.ID,
 			Title: task.Title,
 		})

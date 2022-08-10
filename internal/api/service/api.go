@@ -10,7 +10,7 @@ import (
 type iService interface {
 	AddTask(ctx context.Context, data models.AddTaskData) (uint, error)
 	DeleteTask(ctx context.Context, data models.DeleteTaskData) error
-	TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error)
+	TasksList(ctx context.Context, data models.ListTaskData) ([]models.TaskBrief, error)
 	UpdateTask(ctx context.Context, data models.UpdateTaskData) error
 	GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error)
 }
@@ -41,8 +41,8 @@ func (i *implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateReques
 
 func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
 	data := models.ListTaskData{
-		MaxTasksCount: uint(in.MaxTasksCount),
-		Offset:        uint(in.Offset),
+		Limit:  uint(in.MaxTasksCount),
+		Offset: uint(in.Offset),
 	}
 
 	tasks, err := i.s.TasksList(ctx, data)

@@ -7,12 +7,11 @@
 package service
 
 import (
-	reflect "reflect"
-	sync "sync"
-
 	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	reflect "reflect"
+	sync "sync"
 )
 
 const (
@@ -129,8 +128,10 @@ type TaskListRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	MaxTasksCount uint32 `protobuf:"varint,1,opt,name=MaxTasksCount,proto3" json:"MaxTasksCount,omitempty"`
-	Offset        uint32 `protobuf:"varint,2,opt,name=Offset,proto3" json:"Offset,omitempty"`
+	// Максимальное количество задач
+	Limit uint32 `protobuf:"varint,1,opt,name=Limit,proto3" json:"Limit,omitempty"`
+	// Порядковый номер, с которого будут выводится задачи
+	Offset uint32 `protobuf:"varint,2,opt,name=Offset,proto3" json:"Offset,omitempty"`
 }
 
 func (x *TaskListRequest) Reset() {
@@ -165,9 +166,9 @@ func (*TaskListRequest) Descriptor() ([]byte, []int) {
 	return file_service_api_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *TaskListRequest) GetMaxTasksCount() uint32 {
+func (x *TaskListRequest) GetLimit() uint32 {
 	if x != nil {
-		return x.MaxTasksCount
+		return x.Limit
 	}
 	return 0
 }
@@ -184,6 +185,7 @@ type TaskListResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Список задач
 	Tasks []*TaskListResponse_Task `protobuf:"bytes,1,rep,name=tasks,proto3" json:"tasks,omitempty"`
 }
 
@@ -231,8 +233,11 @@ type TaskUpdateRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ID          uint64  `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
-	Title       string  `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// Идентификатор задачи
+	ID uint64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	//Заголовок задачи
+	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// Описание задачи
 	Description *string `protobuf:"bytes,3,opt,name=description,proto3,oneof" json:"description,omitempty"`
 }
 
@@ -332,6 +337,7 @@ type TaskDeleteRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Идентификатор задачи
 	ID uint64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
 }
 
@@ -417,6 +423,7 @@ type TaskGetRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Идентификатор задачи
 	ID uint64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
 }
 
@@ -464,9 +471,12 @@ type TaskGetResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Title       string  `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	// Заголовок задачи
+	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	// Описание задачи
 	Description *string `protobuf:"bytes,2,opt,name=description,proto3,oneof" json:"description,omitempty"`
-	Edited      int64   `protobuf:"varint,3,opt,name=edited,proto3" json:"edited,omitempty"`
+	// Время последнего редактирования
+	Edited int64 `protobuf:"varint,3,opt,name=edited,proto3" json:"edited,omitempty"`
 }
 
 func (x *TaskGetResponse) Reset() {
@@ -527,7 +537,9 @@ type TaskListResponse_Task struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ID    uint64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	// Идентификатор задачи
+	ID uint64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	//Заголовок задачи
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 }
 
@@ -594,11 +606,10 @@ var file_service_api_proto_rawDesc = []byte{
 	0x88, 0x01, 0x01, 0x42, 0x0e, 0x0a, 0x0c, 0x5f, 0x64, 0x65, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74,
 	0x69, 0x6f, 0x6e, 0x22, 0x24, 0x0a, 0x12, 0x54, 0x61, 0x73, 0x6b, 0x43, 0x72, 0x65, 0x61, 0x74,
 	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x49, 0x44, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x02, 0x49, 0x44, 0x22, 0x4f, 0x0a, 0x0f, 0x54, 0x61, 0x73,
-	0x6b, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x24, 0x0a, 0x0d,
-	0x4d, 0x61, 0x78, 0x54, 0x61, 0x73, 0x6b, 0x73, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x0d, 0x52, 0x0d, 0x4d, 0x61, 0x78, 0x54, 0x61, 0x73, 0x6b, 0x73, 0x43, 0x6f, 0x75,
-	0x6e, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x4f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01,
+	0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x02, 0x49, 0x44, 0x22, 0x3f, 0x0a, 0x0f, 0x54, 0x61, 0x73,
+	0x6b, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05,
+	0x4c, 0x69, 0x6d, 0x69, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x05, 0x4c, 0x69, 0x6d,
+	0x69, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x4f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x18, 0x02, 0x20, 0x01,
 	0x28, 0x0d, 0x52, 0x06, 0x4f, 0x66, 0x66, 0x73, 0x65, 0x74, 0x22, 0x9d, 0x01, 0x0a, 0x10, 0x54,
 	0x61, 0x73, 0x6b, 0x4c, 0x69, 0x73, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12,
 	0x5b, 0x0a, 0x05, 0x74, 0x61, 0x73, 0x6b, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x45,
