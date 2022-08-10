@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	serverPkg "gitlab.ozon.dev/Vanek623/task-manager-system/cmd/server"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/storage"
 	"google.golang.org/grpc"
@@ -35,7 +34,7 @@ func newStorage() (*storage, error) {
 
 		log.Printf("cannot connect to server, try to connect #%d of %d in %d\n", count, reconnectMaxCount, reconnectTimeout)
 		time.Sleep(reconnectTimeout)
-		con, err = grpc.Dial(serverPkg.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		con, err = grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	return &storage{

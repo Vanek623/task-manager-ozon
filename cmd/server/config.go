@@ -2,21 +2,13 @@ package server
 
 // GRPC and HTTP config
 const (
-	// IP адрес сервера
-	IP = "localhost"
+	address = "localhost"
 
-	// Port порт сервера
-	Port = ":8081"
+	portGRPC    = ":8081"
+	addressGRPC = address + portGRPC
 
-	// HTTPPort порт сервера
-	HTTPPort = ":8080"
+	portHTTP    = ":8080"
+	addressHTTP = address + portHTTP
 
-	// FullAddress Полный адрес сервера
-	FullAddress = IP + Port
-
-	// FullHTTPAddress Полный адрес сервера
-	FullHTTPAddress = IP + HTTPPort
-
-	// ConnectionType тип соединения
-	ConnectionType = "tcp"
+	connectionType = "tcp"
 )

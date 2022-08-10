@@ -12,9 +12,10 @@ run-in-docker: build
 .PHONY: build
 build:
 	go mod download && CGO_ENABLED=0 \
-	go build -o ./bin/server ./cmd/server_main.go && \
-	go build -o ./bin/storage ./cmd/storage_main.go && \
-	go build -o ./bin/client ./cmd/client_main.go
+	go build -o ./bin/server ./cmd/server && \
+	go build -o ./bin/storage ./cmd/storage && \
+	go build -o ./bin/client ./cmd/client && \
+	go build -o ./bin/main ./cmd/main.go
 
 .PHONY: run
 run:
@@ -67,3 +68,7 @@ lint-full: .lint-full
 .PHONY: .pbgen
 .pbgen:
 	GOBIN=$(LOCAL_BIN) buf generate api
+
+.PHONY: install-depgraph
+.install-depgraph:
+	GOBIN=$(LOCAL_BIN) go install github.com/kisielk/godepgraph

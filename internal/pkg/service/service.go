@@ -33,8 +33,8 @@ type Service struct {
 	storage iTaskStorage
 }
 
-// NewService создать структуру бизнес логики
-func NewService() (*Service, error) {
+// New создать структуру бизнес логики
+func New() (*Service, error) {
 	s, err := newStorage()
 	if err != nil {
 		return nil, err

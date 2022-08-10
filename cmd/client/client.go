@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"sync"
 	"time"
-
-	serverPkg "gitlab.ozon.dev/Vanek623/task-manager-system/cmd/server"
 
 	"github.com/pkg/errors"
 
@@ -19,12 +18,29 @@ import (
 const reconnectMaxCount = 5
 const reconnectTimeout = 2 * time.Second
 
-// Run запустить клиента
-func Run(ID uint) {
+// RunClients запуск клиентов
+func RunClients(ctx context.Context, count int) {
+	var wg sync.WaitGroup
+	wg.Add(count)
+	for i := 0; i < count; i++ {
+		func(ID uint) {
+			defer wg.Done()
+			run(ctx, ID)
+		}(uint(i + 1))
+	}
+
+	wg.Wait()
+}
+
+const (
+	address = "localhost:8081"
+)
+
+func run(ctx context.Context, ID uint) {
 	// Задержка для запуска grpc сервера
 	time.Sleep(reconnectTimeout)
 
-	con, err := grpc.Dial(serverPkg.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	con, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	for count := 1; err != nil || con == nil; count++ {
 		if count > reconnectMaxCount {
 			log.Fatalf("%d: cannot connect to server", ID)
@@ -32,15 +48,13 @@ func Run(ID uint) {
 
 		log.Printf("%d: cannot connect to server, try to connect #%d of %d in %d", ID, count, reconnectMaxCount, reconnectTimeout)
 		time.Sleep(reconnectTimeout)
-		con, err = grpc.Dial(serverPkg.FullAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		con, err = grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
 	server := pb.NewServiceClient(con)
 
 	log.Printf("%d: client started", ID)
 
-	ctx, cl := context.WithCancel(context.Background())
-	defer cl()
 	{
 		d := "Some description"
 		resp, err := server.TaskCreate(ctx, &pb.TaskCreateRequest{

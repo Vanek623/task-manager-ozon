@@ -14,11 +14,15 @@ import (
 	"google.golang.org/grpc"
 )
 
-func RunStorage(ctx context.Context, password string) {
+// Run запуск сервиса хранилища
+func Run(password string) {
 	listener, err := net.Listen(connectionType, serviceAddress)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	ctx, cl := context.WithCancel(context.Background())
+	defer cl()
 
 	pool, err := connectToDB(ctx, password)
 	if err != nil {
@@ -26,7 +30,7 @@ func RunStorage(ctx context.Context, password string) {
 	}
 	server := grpc.NewServer()
 	storage := storagePkg.NewPostgres(pool, true)
-	pb.RegisterStorageServer(server, storageApiPkg.NewApi(storage))
+	pb.RegisterStorageServer(server, storageApiPkg.NewAPI(storage))
 
 	log.Println("grpc started")
 

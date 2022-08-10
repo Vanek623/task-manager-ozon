@@ -22,7 +22,8 @@ type implementation struct {
 	s iTaskStorage
 }
 
-func NewApi(s iTaskStorage) pb.StorageServer {
+// NewAPI создание обработчика хранилища
+func NewAPI(s iTaskStorage) pb.StorageServer {
 	return &implementation{s: s}
 }
 
@@ -76,8 +77,8 @@ func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (
 	}
 
 	result := make([]*pb.Task, 0, len(tasks))
-	for _, task := range tasks {
-		result = append(result, codeTask(&task))
+	for i := range tasks {
+		result = append(result, codeTask(&tasks[i]))
 	}
 
 	return &pb.TaskListResponse{Tasks: result}, nil

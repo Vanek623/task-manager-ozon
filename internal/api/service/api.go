@@ -20,8 +20,8 @@ type implementation struct {
 	s iService
 }
 
-//NewApi создание обработчика
-func NewApi(s iService) pb.ServiceServer {
+//NewAPI создание обработчика сервиса
+func NewAPI(s iService) pb.ServiceServer {
 	return &implementation{s: s}
 }
 
