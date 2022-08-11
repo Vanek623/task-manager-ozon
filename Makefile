@@ -73,3 +73,6 @@ lint-full: .lint-full
 .PHONY: install-depgraph
 .install-depgraph:
 	GOBIN=$(LOCAL_BIN) go install github.com/kisielk/godepgraph
+
+.PHONY: find-deps
+.find-deps:

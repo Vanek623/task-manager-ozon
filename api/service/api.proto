@@ -5,6 +5,9 @@ option go_package = "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/servic
 
 import "google/api/annotations.proto";
 
+// Сервис менеджера задач
+//
+// Сервис позворляет добавлять, удалять, читать и редактировать задачи.
 service Service {
   // Создание задачи
   //

@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc/credentials/insecure"
+
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
@@ -14,9 +17,6 @@ import (
 	serviceApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api/service"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
-
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"google.golang.org/grpc/credentials/insecure"
 
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
 	"google.golang.org/grpc"
@@ -78,22 +78,25 @@ func RunGRPC(service iService) {
 	}
 }
 
-// @title       TaskBrief manager API
-// @version     1.0
-// @description API Server for TaskBrief manager application
-
-// @host     localhost:8080
-// @BasePath /
-
-// RunREST запускает REST
 func RunREST(ctx context.Context) {
-	mux := runtime.NewServeMux()
+	ctx, cl := context.WithCancel(ctx)
+	defer cl()
+
+	gwmux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	if err := pb.RegisterServiceHandlerFromEndpoint(ctx, mux, addressGRPC, opts); err != nil {
+	if err := pb.RegisterServiceHandlerFromEndpoint(ctx, gwmux, addressGRPC, opts); err != nil {
 		log.Fatal(err)
 	}
 
 	log.Println("rest started")
+
+	mux := http.NewServeMux()
+	mux.Handle("/", gwmux)
+
+	fs := http.FileServer(http.Dir(swaggerDir))
+	mux.Handle("/swagger/", http.StripPrefix("/swagger/", fs))
+
+	log.Println("swagger started")
 
 	if err := http.ListenAndServe(addressHTTP, mux); err != nil {
 		log.Fatal(err)

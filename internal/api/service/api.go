@@ -41,7 +41,7 @@ func (i *implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateReques
 
 func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
 	data := models.ListTaskData{
-		Limit:  uint(in.MaxTasksCount),
+		Limit:  uint(in.Limit),
 		Offset: uint(in.Offset),
 	}
 

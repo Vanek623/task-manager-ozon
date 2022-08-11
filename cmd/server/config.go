@@ -11,4 +11,6 @@ const (
 	addressHTTP = address + portHTTP
 
 	connectionType = "tcp"
+
+	swaggerDir = "./swagger"
 )
