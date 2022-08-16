@@ -1,27 +1,27 @@
-package api
+package service
 
 import (
 	"context"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
-	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api"
+	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
 )
 
 type iService interface {
 	AddTask(ctx context.Context, data models.AddTaskData) (uint, error)
 	DeleteTask(ctx context.Context, data models.DeleteTaskData) error
-	TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error)
+	TasksList(ctx context.Context, data models.ListTaskData) ([]models.TaskBrief, error)
 	UpdateTask(ctx context.Context, data models.UpdateTaskData) error
 	GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error)
 }
 
 type implementation struct {
-	pb.UnimplementedAdminServer
+	pb.UnimplementedServiceServer
 	s iService
 }
 
-//New создание обработчика
-func New(s iService) pb.AdminServer {
+//NewAPI создание обработчика сервиса
+func NewAPI(s iService) pb.ServiceServer {
 	return &implementation{s: s}
 }
 
@@ -41,8 +41,8 @@ func (i *implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateReques
 
 func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
 	data := models.ListTaskData{
-		MaxTasksCount: uint(in.MaxTasksCount),
-		Offset:        uint(in.Offset),
+		Limit:  uint(in.Limit),
+		Offset: uint(in.Offset),
 	}
 
 	tasks, err := i.s.TasksList(ctx, data)

@@ -1,0 +1,319 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "service/api.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "Service"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/service/task": {
+      "get": {
+        "summary": "Получение задачи",
+        "description": "Получение подробной информации о задаче.",
+        "operationId": "Service_TaskGet",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/serviceTaskGetResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ID",
+            "description": "Идентификатор задачи",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Service"
+        ]
+      },
+      "delete": {
+        "summary": "Удаление задачи",
+        "description": "Удаление задачи.",
+        "operationId": "Service_TaskDelete",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/serviceTaskDeleteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/serviceTaskDeleteRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Service"
+        ]
+      },
+      "post": {
+        "summary": "Создание задачи",
+        "description": "Создание задачи.",
+        "operationId": "Service_TaskCreate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/serviceTaskCreateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/serviceTaskCreateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Service"
+        ]
+      },
+      "put": {
+        "summary": "Обновление задачи",
+        "description": "Обновление задачи.",
+        "operationId": "Service_TaskUpdate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/serviceTaskUpdateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/serviceTaskUpdateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Service"
+        ]
+      }
+    },
+    "/v1/service/tasks": {
+      "get": {
+        "summary": "Получение списка задач",
+        "description": "Получение списка задач.",
+        "operationId": "Service_TaskList",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/serviceTaskListResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Limit",
+            "description": "Максимальное количество задач",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "Offset",
+            "description": "Порядковый номер, с которого будут выводится задачи",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Service"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "TaskListResponseTask": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Идентификатор задачи"
+        },
+        "title": {
+          "type": "string",
+          "title": "Заголовок задачи"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "serviceTaskCreateRequest": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "serviceTaskCreateResponse": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "serviceTaskDeleteRequest": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Идентификатор задачи"
+        }
+      }
+    },
+    "serviceTaskDeleteResponse": {
+      "type": "object"
+    },
+    "serviceTaskGetResponse": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "title": "Заголовок задачи"
+        },
+        "description": {
+          "type": "string",
+          "title": "Описание задачи"
+        },
+        "edited": {
+          "type": "string",
+          "format": "int64",
+          "title": "Время последнего редактирования"
+        }
+      }
+    },
+    "serviceTaskListResponse": {
+      "type": "object",
+      "properties": {
+        "tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TaskListResponseTask"
+          },
+          "title": "Список задач"
+        }
+      }
+    },
+    "serviceTaskUpdateRequest": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Идентификатор задачи"
+        },
+        "title": {
+          "type": "string",
+          "title": "Заголовок задачи"
+        },
+        "description": {
+          "type": "string",
+          "title": "Описание задачи"
+        }
+      }
+    },
+    "serviceTaskUpdateResponse": {
+      "type": "object"
+    }
+  }
+}

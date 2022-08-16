@@ -1,0 +1,290 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "storage/api.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "Storage"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/storage/task": {
+      "get": {
+        "operationId": "Storage_TaskGet",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storageTaskGetResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "ID",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "uint64"
+          }
+        ],
+        "tags": [
+          "Storage"
+        ]
+      },
+      "delete": {
+        "operationId": "Storage_TaskDelete",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storageTaskDeleteResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/storageTaskDeleteRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Storage"
+        ]
+      },
+      "post": {
+        "operationId": "Storage_TaskAdd",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storageTaskAddResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/storageTaskAddRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Storage"
+        ]
+      },
+      "put": {
+        "operationId": "Storage_TaskUpdate",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storageTaskUpdateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/storageTaskUpdateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Storage"
+        ]
+      }
+    },
+    "/v1/storage/tasks": {
+      "get": {
+        "operationId": "Storage_TaskList",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/storageTaskListResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Limit",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "Offset",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "tags": [
+          "Storage"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "storageTask": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "Title": {
+          "type": "string"
+        },
+        "Description": {
+          "type": "string"
+        },
+        "Created": {
+          "type": "string",
+          "format": "int64"
+        },
+        "Updated": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "storageTaskAddRequest": {
+      "type": "object",
+      "properties": {
+        "task": {
+          "$ref": "#/definitions/storageTask"
+        }
+      }
+    },
+    "storageTaskAddResponse": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "storageTaskDeleteRequest": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
+    "storageTaskDeleteResponse": {
+      "type": "object"
+    },
+    "storageTaskGetResponse": {
+      "type": "object",
+      "properties": {
+        "task": {
+          "$ref": "#/definitions/storageTask"
+        }
+      }
+    },
+    "storageTaskListResponse": {
+      "type": "object",
+      "properties": {
+        "tasks": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/storageTask"
+          }
+        }
+      }
+    },
+    "storageTaskUpdateRequest": {
+      "type": "object",
+      "properties": {
+        "task": {
+          "$ref": "#/definitions/storageTask"
+        }
+      }
+    },
+    "storageTaskUpdateResponse": {
+      "type": "object"
+    }
+  }
+}

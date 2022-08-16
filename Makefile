@@ -11,8 +11,11 @@ run-in-docker: build
 # build app
 .PHONY: build
 build:
-	go mod download && CGO_ENABLED=0  go build \
-		-o ./bin/main$(shell go env GOEXE) ./cmd/main.go
+	go mod download && CGO_ENABLED=0 \
+	go build -o ./bin/server ./cmd/server && \
+	go build -o ./bin/storage ./cmd/storage && \
+	go build -o ./bin/client ./cmd/client && \
+	go build -o ./bin/main ./cmd/main.go
 
 .PHONY: run
 run:
@@ -58,6 +61,7 @@ lint-full: .lint-full
 .PHONY: .pbdeps
 .pbdeps:
 	GOBIN=$(LOCAL_BIN) go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway && \
+	GOBIN=$(LOCAL_BIN) go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2 && \
 	GOBIN=$(LOCAL_BIN) go install google.golang.org/protobuf/cmd/protoc-gen-go && \
 	GOBIN=$(LOCAL_BIN) go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 
@@ -65,3 +69,10 @@ lint-full: .lint-full
 .PHONY: .pbgen
 .pbgen:
 	GOBIN=$(LOCAL_BIN) buf generate api
+
+.PHONY: install-depgraph
+.install-depgraph:
+	GOBIN=$(LOCAL_BIN) go install github.com/kisielk/godepgraph
+
+.PHONY: find-deps
+.find-deps:

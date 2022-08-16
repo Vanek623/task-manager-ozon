@@ -1,0 +1,140 @@
+syntax = "proto3";
+
+package ozon.dev.vanek623.task_manager_bot.api.service;
+option go_package = "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service;service";
+
+import "google/api/annotations.proto";
+
+// Сервис менеджера задач
+//
+// Сервис позворляет добавлять, удалять, читать и редактировать задачи.
+service Service {
+  // Создание задачи
+  //
+  // Создание задачи.
+  rpc TaskCreate(TaskCreateRequest) returns (TaskCreateResponse) {
+    option (google.api.http) = {
+      post: "/v1/service/task"
+      body: "*"
+    };
+  }
+
+  // Получение списка задач
+  //
+  // Получение списка задач.
+  rpc TaskList(TaskListRequest) returns (TaskListResponse) {
+    option (google.api.http) = {
+      get: "/v1/service/tasks"
+    };
+  }
+
+  // Обновление задачи
+  //
+  // Обновление задачи.
+  rpc TaskUpdate(TaskUpdateRequest) returns (TaskUpdateResponse) {
+    option (google.api.http) = {
+      put: "/v1/service/task"
+      body: "*"
+    };
+  }
+
+  // Удаление задачи
+  //
+  // Удаление задачи.
+  rpc TaskDelete(TaskDeleteRequest) returns (TaskDeleteResponse) {
+    option (google.api.http) = {
+      delete: "/v1/service/task"
+      body: "*"
+    };
+  }
+
+  // Получение задачи
+  //
+  // Получение подробной информации о задаче.
+  rpc TaskGet(TaskGetRequest) returns (TaskGetResponse) {
+    option (google.api.http) = {
+      get: "/v1/service/task"
+    };
+  }
+}
+
+/// ---------------------------------------------------------------------------------------------------------------------
+// TaskCreate endpoint messages
+// ---------------------------------------------------------------------------------------------------------------------
+
+message TaskCreateRequest {
+  string title = 1;
+  optional string description = 2;
+}
+message TaskCreateResponse {
+  uint64 ID = 1;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// TaskList endpoint messages
+// ---------------------------------------------------------------------------------------------------------------------
+
+message TaskListRequest {
+  // Максимальное количество задач
+  uint32 Limit = 1;
+
+  // Порядковый номер, с которого будут выводится задачи
+  uint32 Offset = 2;
+}
+message TaskListResponse {
+  // Список задач
+  repeated Task tasks = 1;
+
+  message Task {
+    // Идентификатор задачи
+    uint64 ID = 1;
+
+    //Заголовок задачи
+    string title = 2;
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// TaskUpdate endpoint messages
+// ---------------------------------------------------------------------------------------------------------------------
+
+message TaskUpdateRequest {
+  // Идентификатор задачи
+  uint64 ID = 1;
+
+  //Заголовок задачи
+  string title = 2;
+
+  // Описание задачи
+  optional string description = 3;
+}
+message TaskUpdateResponse {}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// TaskDelete endpoint messages
+// ---------------------------------------------------------------------------------------------------------------------
+
+message TaskDeleteRequest {
+  // Идентификатор задачи
+  uint64 ID = 1;
+}
+message TaskDeleteResponse {}
+
+// ---------------------------------------------------------------------------------------------------------------------
+// TaskDelete endpoint messages
+// ---------------------------------------------------------------------------------------------------------------------
+
+message TaskGetRequest {
+  // Идентификатор задачи
+  uint64  ID = 1;
+}
+message TaskGetResponse {
+  // Заголовок задачи
+  string title = 1;
+
+  // Описание задачи
+  optional string description = 2;
+
+  // Время последнего редактирования
+  int64 edited = 3;
+}

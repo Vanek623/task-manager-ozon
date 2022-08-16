@@ -27,7 +27,7 @@ func (c *deleteCommand) Execute(ctx context.Context, args string) string {
 		return err.Error()
 	}
 
-	return "Task deleted"
+	return "TaskBrief deleted"
 }
 
 func newDeleteCommand(s iService) *deleteCommand {

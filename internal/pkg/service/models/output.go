@@ -2,15 +2,15 @@ package models
 
 import "time"
 
-// Task краткая информация о задаче
-type Task struct {
-	ID    uint
-	Title string
+// TaskBrief краткая информация о задаче
+type TaskBrief struct {
+	ID    uint   `json:"id"`
+	Title string `json:"title"`
 }
 
 // DetailedTask подробная информаци о задаче
 type DetailedTask struct {
-	Title       string
-	Description string
-	Edited      time.Time
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Edited      time.Time `json:"edited"`
 }
