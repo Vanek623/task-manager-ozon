@@ -36,7 +36,7 @@ func (c *listCommand) Execute(ctx context.Context, args string) string {
 
 	data := serviceModelsPkg.ListTaskData{
 		MaxTasksCount: tasksOnPage,
-		Offset:        tasksOnPage * (uint(pageNum) - 1),
+		Offset:        tasksOnPage * (pageNum - 1),
 	}
 
 	tasks, err := c.service.TasksList(ctx, data)

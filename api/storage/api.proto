@@ -64,8 +64,8 @@ message TaskAddResponse {
 // ---------------------------------------------------------------------------------------------------------------------
 
 message TaskListRequest {
-  uint32 Limit = 1;
-  uint32 Offset = 2;
+  uint64 Limit = 1;
+  uint64 Offset = 2;
 }
 message TaskListResponse {
   repeated Task tasks = 1;

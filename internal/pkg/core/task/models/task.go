@@ -7,7 +7,7 @@ import (
 
 // Task структура для хранения задачи
 type Task struct {
-	ID          uint      `storage:"id"`
+	ID          uint64    `storage:"id"`
 	Title       string    `storage:"title"`
 	Description string    `storage:"description"`
 	Created     time.Time `storage:"created"`

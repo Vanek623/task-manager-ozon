@@ -23,22 +23,30 @@ import (
 )
 
 type iService interface {
-	AddTask(ctx context.Context, data models.AddTaskData) (uint, error)
+	AddTask(ctx context.Context, data models.AddTaskData) (uint64, error)
 	DeleteTask(ctx context.Context, data models.DeleteTaskData) error
-	TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error)
+	TasksList(ctx context.Context, data models.ListTaskData) ([]*models.Task, error)
 	UpdateTask(ctx context.Context, data models.UpdateTaskData) error
 	GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error)
 }
 
+type iTaskStorage interface {
+	Add(ctx context.Context, t *models.Task) (uint64, error)
+	Delete(ctx context.Context, ID uint64) error
+	List(ctx context.Context, limit, offset uint64) ([]*models.Task, error)
+	Update(ctx context.Context, t *models.Task) error
+	Get(ctx context.Context, ID uint64) (*models.Task, error)
+}
+
 // Run запуск GRPC, REST and Tg Bot
-func Run() {
+func Run(storage iTaskStorage) {
 	var wg sync.WaitGroup
 	wg.Add(3)
 
 	ctx, cl := context.WithCancel(context.Background())
 	defer cl()
 
-	s, err := service.New()
+	s, err := service.New(storage)
 	if err != nil {
 		log.Fatal(err)
 	}

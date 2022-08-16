@@ -10,11 +10,11 @@ import (
 )
 
 type iTaskStorage interface {
-	Add(ctx context.Context, t models.Task) (uint, error)
-	Delete(ctx context.Context, ID uint) error
-	List(ctx context.Context, limit, offset uint) ([]models.Task, error)
-	Update(ctx context.Context, t models.Task) error
-	Get(ctx context.Context, ID uint) (*models.Task, error)
+	Add(ctx context.Context, t *models.Task) (uint64, error)
+	Delete(ctx context.Context, ID uint64) error
+	List(ctx context.Context, limit, offset uint64) ([]*models.Task, error)
+	Update(ctx context.Context, t *models.Task) error
+	Get(ctx context.Context, ID uint64) (*models.Task, error)
 }
 
 type implementation struct {
@@ -27,9 +27,9 @@ func NewAPI(s iTaskStorage) pb.StorageServer {
 	return &implementation{s: s}
 }
 
-func codeTask(in *models.Task) *pb.Task {
+func encodeTask(in *models.Task) *pb.Task {
 	task := pb.Task{
-		ID:      uint64(in.ID),
+		ID:      in.ID,
 		Title:   in.Title,
 		Created: in.Created.Unix(),
 		Updated: in.Edited.Unix(),
@@ -48,7 +48,7 @@ func decodeTask(in *pb.Task) (*models.Task, error) {
 	}
 
 	return &models.Task{
-		ID:          uint(in.GetID()),
+		ID:          in.GetID(),
 		Title:       in.GetTitle(),
 		Description: in.GetDescription(),
 		Created:     time.Unix(in.GetCreated(), 0),
@@ -62,35 +62,35 @@ func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*p
 		return nil, err
 	}
 
-	ID, err := i.s.Add(ctx, *decoded)
+	id, err := i.s.Add(ctx, decoded)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.TaskAddResponse{ID: uint64(ID)}, nil
+	return &pb.TaskAddResponse{ID: id}, nil
 }
 
 func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
-	tasks, err := i.s.List(ctx, uint(in.GetLimit()), uint(in.GetOffset()))
+	tasks, err := i.s.List(ctx, in.GetLimit(), in.GetOffset())
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]*pb.Task, 0, len(tasks))
-	for i := range tasks {
-		result = append(result, codeTask(&tasks[i]))
+	result := make([]*pb.Task, len(tasks))
+	for i, t := range tasks {
+		result[i] = encodeTask(t)
 	}
 
 	return &pb.TaskListResponse{Tasks: result}, nil
 }
 
 func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateRequest) (*pb.TaskUpdateResponse, error) {
-	task, err := decodeTask(in.GetTask())
+	decoded, err := decodeTask(in.GetTask())
 	if err != nil {
 		return nil, err
 	}
 
-	if err := i.s.Update(ctx, *task); err != nil {
+	if err := i.s.Update(ctx, decoded); err != nil {
 		return nil, err
 	}
 
@@ -98,7 +98,7 @@ func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateReques
 }
 
 func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteRequest) (*pb.TaskDeleteResponse, error) {
-	if err := i.s.Delete(ctx, uint(in.GetID())); err != nil {
+	if err := i.s.Delete(ctx, in.GetID()); err != nil {
 		return nil, err
 	}
 
@@ -106,10 +106,10 @@ func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteReques
 }
 
 func (i *implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*pb.TaskGetResponse, error) {
-	task, err := i.s.Get(ctx, uint(in.ID))
+	task, err := i.s.Get(ctx, in.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.TaskGetResponse{Task: codeTask(task)}, nil
+	return &pb.TaskGetResponse{Task: encodeTask(task)}, nil
 }

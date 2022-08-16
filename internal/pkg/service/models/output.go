@@ -4,7 +4,7 @@ import "time"
 
 // Task краткая информация о задаче
 type Task struct {
-	ID    uint
+	ID    uint64
 	Title string
 }
 

@@ -1,7 +1,8 @@
-package service
+package server
 
 import (
 	"context"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
 	"log"
 	"time"
 
@@ -19,7 +20,7 @@ const (
 )
 
 type storage struct {
-	iTaskStorage
+	service.iTaskStorage
 	client pb.StorageClient
 }
 
@@ -42,17 +43,17 @@ func newStorage() (*storage, error) {
 	}, nil
 }
 
-func (s storage) Add(ctx context.Context, t models.Task) (uint, error) {
-	resp, err := s.client.TaskAdd(ctx, &pb.TaskAddRequest{Task: codeTask(&t)})
+func (s *storage) Add(ctx context.Context, t *models.Task) (uint64, error) {
+	resp, err := s.client.TaskAdd(ctx, &pb.TaskAddRequest{Task: encodeTask(t)})
 	if err != nil {
 		return 0, err
 	}
 
-	return uint(resp.GetID()), nil
+	return resp.GetID(), nil
 }
 
-func (s storage) Delete(ctx context.Context, ID uint) error {
-	_, err := s.client.TaskDelete(ctx, &pb.TaskDeleteRequest{ID: uint64(ID)})
+func (s *storage) Delete(ctx context.Context, ID uint64) error {
+	_, err := s.client.TaskDelete(ctx, &pb.TaskDeleteRequest{ID: ID})
 	if err != nil {
 		return err
 	}
@@ -60,30 +61,30 @@ func (s storage) Delete(ctx context.Context, ID uint) error {
 	return nil
 }
 
-func (s storage) List(ctx context.Context, limit, offset uint) ([]models.Task, error) {
+func (s *storage) List(ctx context.Context, limit, offset uint64) ([]*models.Task, error) {
 	resp, err := s.client.TaskList(ctx, &pb.TaskListRequest{
-		Limit:  uint32(limit),
-		Offset: uint32(offset),
+		Limit:  limit,
+		Offset: offset,
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	res := make([]models.Task, 0, len(resp.GetTasks()))
+	res := make([]*models.Task, 0, len(resp.GetTasks()))
 	for _, task := range resp.GetTasks() {
 		decoded, err := decodeTask(task)
 		if err != nil {
 			return nil, err
 		}
-		res = append(res, *decoded)
+		res = append(res, decoded)
 	}
 
 	return res, nil
 }
 
-func (s storage) Update(ctx context.Context, t models.Task) error {
-	_, err := s.client.TaskUpdate(ctx, &pb.TaskUpdateRequest{Task: codeTask(&t)})
+func (s *storage) Update(ctx context.Context, t *models.Task) error {
+	_, err := s.client.TaskUpdate(ctx, &pb.TaskUpdateRequest{Task: encodeTask(t)})
 	if err != nil {
 		return err
 	}
@@ -91,7 +92,7 @@ func (s storage) Update(ctx context.Context, t models.Task) error {
 	return nil
 }
 
-func (s storage) Get(ctx context.Context, ID uint) (*models.Task, error) {
+func (s *storage) Get(ctx context.Context, ID uint64) (*models.Task, error) {
 	resp, err := s.client.TaskGet(ctx, &pb.TaskGetRequest{ID: uint64(ID)})
 	if err != nil {
 		return nil, err
@@ -105,9 +106,9 @@ func (s storage) Get(ctx context.Context, ID uint) (*models.Task, error) {
 	return decoded, nil
 }
 
-func codeTask(in *models.Task) *pb.Task {
+func encodeTask(in *models.Task) *pb.Task {
 	task := pb.Task{
-		ID:      uint64(in.ID),
+		ID:      in.ID,
 		Title:   in.Title,
 		Created: in.Created.Unix(),
 		Updated: in.Edited.Unix(),
@@ -126,7 +127,7 @@ func decodeTask(in *pb.Task) (*models.Task, error) {
 	}
 
 	return &models.Task{
-		ID:          uint(in.GetID()),
+		ID:          in.GetID(),
 		Title:       in.GetTitle(),
 		Description: in.GetDescription(),
 		Created:     time.Unix(in.GetCreated(), 0),

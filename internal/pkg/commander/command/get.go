@@ -26,7 +26,7 @@ func (c *getCommand) Execute(ctx context.Context, args string) string {
 		return fmt.Sprintf("Cannot parse %s", argsArr[0])
 	}
 
-	t, err := c.service.GetTask(ctx, serviceModelsPkg.GetTaskData{ID: uint(id)})
+	t, err := c.service.GetTask(ctx, serviceModelsPkg.GetTaskData{ID: id})
 	if err != nil {
 		return err.Error()
 	}

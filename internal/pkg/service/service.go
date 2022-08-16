@@ -12,19 +12,19 @@ import (
 var ErrValidation = errors.New("invalid data")
 
 type iService interface {
-	AddTask(ctx context.Context, data models.AddTaskData) (uint, error)
+	AddTask(ctx context.Context, data models.AddTaskData) (uint64, error)
 	DeleteTask(ctx context.Context, data models.DeleteTaskData) error
-	TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error)
+	TasksList(ctx context.Context, data models.ListTaskData) ([]*models.Task, error)
 	UpdateTask(ctx context.Context, data models.UpdateTaskData) error
 	GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error)
 }
 
 type iTaskStorage interface {
-	Add(ctx context.Context, t taskModelsPkg.Task) (uint, error)
-	Delete(ctx context.Context, ID uint) error
-	List(ctx context.Context, limit, offset uint) ([]taskModelsPkg.Task, error)
-	Update(ctx context.Context, t taskModelsPkg.Task) error
-	Get(ctx context.Context, ID uint) (*taskModelsPkg.Task, error)
+	Add(ctx context.Context, t *taskModelsPkg.Task) (uint64, error)
+	Delete(ctx context.Context, ID uint64) error
+	List(ctx context.Context, limit, offset uint64) ([]*taskModelsPkg.Task, error)
+	Update(ctx context.Context, t *taskModelsPkg.Task) error
+	Get(ctx context.Context, ID uint64) (*taskModelsPkg.Task, error)
 }
 
 // Service структура бизнес логики
@@ -34,24 +34,19 @@ type Service struct {
 }
 
 // New создать структуру бизнес логики
-func New() (*Service, error) {
-	s, err := newStorage()
-	if err != nil {
-		return nil, err
-	}
-
+func New(s iTaskStorage) (*Service, error) {
 	return &Service{
 		storage: s,
 	}, nil
 }
 
 // AddTask добавить задачу
-func (s *Service) AddTask(ctx context.Context, data models.AddTaskData) (uint, error) {
+func (s *Service) AddTask(ctx context.Context, data models.AddTaskData) (uint64, error) {
 	if err := isTitleAndDescriptionOk(data.Title, data.Description); err != nil {
 		return 0, err
 	}
 
-	task := taskModelsPkg.Task{
+	task := &taskModelsPkg.Task{
 		Title:       data.Title,
 		Description: data.Description,
 	}
@@ -65,15 +60,15 @@ func (s *Service) DeleteTask(ctx context.Context, data models.DeleteTaskData) er
 }
 
 // TasksList получить список задач
-func (s *Service) TasksList(ctx context.Context, data models.ListTaskData) ([]models.Task, error) {
+func (s *Service) TasksList(ctx context.Context, data models.ListTaskData) ([]*models.Task, error) {
 	tasks, err := s.storage.List(ctx, data.MaxTasksCount, data.Offset)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]models.Task, 0, len(tasks))
+	result := make([]*models.Task, 0, len(tasks))
 	for _, task := range tasks {
-		result = append(result, models.Task{
+		result = append(result, &models.Task{
 			ID:    task.ID,
 			Title: task.Title,
 		})
@@ -88,7 +83,7 @@ func (s *Service) UpdateTask(ctx context.Context, data models.UpdateTaskData) er
 		return err
 	}
 
-	task := taskModelsPkg.Task{
+	task := &taskModelsPkg.Task{
 		ID:          data.ID,
 		Title:       data.Title,
 		Description: data.Description,

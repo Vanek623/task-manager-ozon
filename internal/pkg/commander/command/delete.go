@@ -23,7 +23,7 @@ func (c *deleteCommand) Execute(ctx context.Context, args string) string {
 		return fmt.Sprintf("Cannot parse %s", argsArr[0])
 	}
 
-	if err = c.service.DeleteTask(ctx, serviceModelsPkg.DeleteTaskData{ID: uint(id)}); err != nil {
+	if err = c.service.DeleteTask(ctx, serviceModelsPkg.DeleteTaskData{ID: id}); err != nil {
 		return err.Error()
 	}
 

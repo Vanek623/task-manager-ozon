@@ -24,7 +24,7 @@ func (c *updateCommand) Execute(ctx context.Context, args string) string {
 	}
 
 	data := serviceModelsPkg.UpdateTaskData{
-		ID:          uint(id),
+		ID:          id,
 		Title:       argsArr[1],
 		Description: argsArr[2],
 	}
