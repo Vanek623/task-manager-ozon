@@ -128,7 +128,9 @@ type TaskListRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Limit  uint64 `protobuf:"varint,1,opt,name=Limit,proto3" json:"Limit,omitempty"`
+	// Максимальное количество задач
+	Limit uint64 `protobuf:"varint,1,opt,name=Limit,proto3" json:"Limit,omitempty"`
+	// Порядковый номер, с которого будут выводится задачи
 	Offset uint64 `protobuf:"varint,2,opt,name=Offset,proto3" json:"Offset,omitempty"`
 }
 
@@ -183,6 +185,7 @@ type TaskListResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Список задач
 	Tasks []*TaskListResponse_Task `protobuf:"bytes,1,rep,name=tasks,proto3" json:"tasks,omitempty"`
 }
 
@@ -230,8 +233,11 @@ type TaskUpdateRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ID          uint64  `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
-	Title       string  `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// Идентификатор задачи
+	ID uint64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	//Заголовок задачи
+	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
+	// Описание задачи
 	Description *string `protobuf:"bytes,3,opt,name=description,proto3,oneof" json:"description,omitempty"`
 }
 
@@ -331,6 +337,7 @@ type TaskDeleteRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Идентификатор задачи
 	ID uint64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
 }
 
@@ -416,6 +423,7 @@ type TaskGetRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Идентификатор задачи
 	ID uint64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
 }
 
@@ -463,9 +471,12 @@ type TaskGetResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Title       string  `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	// Заголовок задачи
+	Title string `protobuf:"bytes,1,opt,name=title,proto3" json:"title,omitempty"`
+	// Описание задачи
 	Description *string `protobuf:"bytes,2,opt,name=description,proto3,oneof" json:"description,omitempty"`
-	Edited      int64   `protobuf:"varint,3,opt,name=edited,proto3" json:"edited,omitempty"`
+	// Время последнего редактирования
+	Edited int64 `protobuf:"varint,3,opt,name=edited,proto3" json:"edited,omitempty"`
 }
 
 func (x *TaskGetResponse) Reset() {
@@ -526,7 +537,9 @@ type TaskListResponse_Task struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ID    uint64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	// Идентификатор задачи
+	ID uint64 `protobuf:"varint,1,opt,name=ID,proto3" json:"ID,omitempty"`
+	//Заголовок задачи
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 }
 

@@ -28,7 +28,7 @@ func (c *updateCommand) Execute(ctx context.Context, args string) string {
 		return err.Error()
 	}
 
-	return "Task updated"
+	return "TaskBrief updated"
 }
 
 func newUpdateCommand(s iService) *updateCommand {

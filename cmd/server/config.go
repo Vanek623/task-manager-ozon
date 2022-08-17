@@ -13,4 +13,6 @@ const (
 	connectionType = "tcp"
 
 	storageAddress = "localhost:8082"
+
+	swaggerDir = "/home/ivan/GolandProjects/TaskBot/swagger"
 )

@@ -57,6 +57,7 @@ lint-full: .lint-full
 .PHONY: .pbdeps
 .pbdeps:
 	GOBIN=$(LOCAL_BIN) go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway && \
+	GOBIN=$(LOCAL_BIN) go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2 && \
 	GOBIN=$(LOCAL_BIN) go install google.golang.org/protobuf/cmd/protoc-gen-go && \
 	GOBIN=$(LOCAL_BIN) go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
 
@@ -68,3 +69,6 @@ lint-full: .lint-full
 .PHONY: install-depgraph
 .install-depgraph:
 	GOBIN=$(LOCAL_BIN) go install github.com/kisielk/godepgraph
+
+.PHONY: find-deps
+.find-deps:

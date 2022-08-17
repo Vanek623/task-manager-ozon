@@ -7,11 +7,11 @@ import (
 
 // Task структура для хранения задачи
 type Task struct {
-	ID          uint64    `storage:"id"`
-	Title       string    `storage:"title"`
-	Description string    `storage:"description"`
-	Created     time.Time `storage:"created"`
-	Edited      time.Time `storage:"edited"`
+	ID          uint64    `db:"id"`
+	Title       string    `db:"title"`
+	Description string    `db:"description"`
+	Created     time.Time `db:"created"`
+	Edited      time.Time `db:"edited"`
 }
 
 func (t *Task) String() string {

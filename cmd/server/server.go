@@ -85,15 +85,25 @@ func RunGRPC(service iService) {
 	}
 }
 
-// RunREST запускает REST
 func RunREST(ctx context.Context) {
-	mux := runtime.NewServeMux()
+	ctx, cl := context.WithCancel(ctx)
+	defer cl()
+
+	gwmux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	if err := pb.RegisterServiceHandlerFromEndpoint(ctx, mux, addressGRPC, opts); err != nil {
+	if err := pb.RegisterServiceHandlerFromEndpoint(ctx, gwmux, addressGRPC, opts); err != nil {
 		log.Fatal(err)
 	}
 
 	log.Println("rest started")
+
+	mux := http.NewServeMux()
+	mux.Handle("/", gwmux)
+
+	fs := http.FileServer(http.Dir(swaggerDir))
+	mux.Handle("/swagger/", http.StripPrefix("/swagger/", fs))
+
+	log.Println("swagger started")
 
 	if err := http.ListenAndServe(addressHTTP, mux); err != nil {
 		log.Fatal(err)
