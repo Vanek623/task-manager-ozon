@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	serviceModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 )
 
 type getCommand struct {
@@ -26,15 +26,15 @@ func (c *getCommand) Execute(ctx context.Context, args string) string {
 		return fmt.Sprintf("Cannot parse %s", argsArr[0])
 	}
 
-	t, err := c.service.GetTask(ctx, serviceModelsPkg.GetTaskData{ID: id})
+	t, err := c.service.GetTask(ctx, models.NewGetTaskData(id))
 	if err != nil {
 		return err.Error()
 	}
 
 	return fmt.Sprintf("Title: %s \nDescription: %s \nEdited: %s",
-		t.Title,
-		t.Description,
-		t.Edited.Format(time.Stamp))
+		t.Title(),
+		t.Description(),
+		t.Edited().Format(time.Stamp))
 }
 
 func newGetCommand(s iService) *getCommand {

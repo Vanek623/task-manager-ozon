@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	serviceModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 )
 
 type updateCommand struct {
@@ -23,11 +23,7 @@ func (c *updateCommand) Execute(ctx context.Context, args string) string {
 		return fmt.Sprintf("Cannot parse %s", argsArr[0])
 	}
 
-	data := serviceModelsPkg.UpdateTaskData{
-		ID:          id,
-		Title:       argsArr[1],
-		Description: argsArr[2],
-	}
+	data := models.NewUpdateTaskData(id, argsArr[1], argsArr[2])
 	if err = c.service.UpdateTask(ctx, data); err != nil {
 		return err.Error()
 	}
