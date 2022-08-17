@@ -2,13 +2,12 @@ package storage
 
 import (
 	"context"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 	"time"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 
 	"github.com/pkg/errors"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 )
 
 type iTaskStorage interface {

@@ -2,10 +2,10 @@ package storage
 
 import (
 	"context"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 	"time"
 
 	"github.com/pkg/errors"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 )
 
 const localCapacity = 100
