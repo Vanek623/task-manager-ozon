@@ -85,6 +85,7 @@ func RunGRPC(service iService) {
 	}
 }
 
+// RunREST запускает REST
 func RunREST(ctx context.Context) {
 	ctx, cl := context.WithCancel(ctx)
 	defer cl()
