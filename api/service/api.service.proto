@@ -57,7 +57,7 @@ message TaskCreateResponse {
 // ---------------------------------------------------------------------------------------------------------------------
 
 message TaskListRequest {
-  uint64 MaxTasksCount = 1;
+  uint64 Limit = 1;
   uint64 Offset = 2;
 }
 message TaskListResponse {

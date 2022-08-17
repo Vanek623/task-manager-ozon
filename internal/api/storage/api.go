@@ -40,7 +40,7 @@ func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*p
 }
 
 func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
-	tasks, err := i.s.List(ctx, in.GetMaxTasksCount(), in.GetOffset())
+	tasks, err := i.s.List(ctx, in.GetLimit(), in.GetOffset())
 	if err != nil {
 		return nil, err
 	}

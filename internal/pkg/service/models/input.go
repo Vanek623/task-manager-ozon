@@ -55,13 +55,13 @@ func NewUpdateTaskData(ID uint64, title string, description string) *UpdateTaskD
 
 // ListTaskData структура запроса на получение списка задач
 type ListTaskData struct {
-	maxTasksCount uint64
-	offset        uint64
+	limit  uint64
+	offset uint64
 }
 
-// MaxTasksCount максимальное кол-во выдаваемых задач
-func (d *ListTaskData) MaxTasksCount() uint64 {
-	return d.maxTasksCount
+// Limit максимальное кол-во выдаваемых задач
+func (d *ListTaskData) Limit() uint64 {
+	return d.limit
 }
 
 // Offset сколько задач пропустить
@@ -70,10 +70,10 @@ func (d *ListTaskData) Offset() uint64 {
 }
 
 // NewListTaskData новый запрос на чтение списка
-func NewListTaskData(maxTasksCount uint64, offset uint64) *ListTaskData {
+func NewListTaskData(limit uint64, offset uint64) *ListTaskData {
 	return &ListTaskData{
-		maxTasksCount: maxTasksCount,
-		offset:        offset,
+		limit:  limit,
+		offset: offset,
 	}
 }
 

@@ -46,8 +46,8 @@ func (s *grpc) Delete(ctx context.Context, data *models.DeleteTaskData) error {
 
 func (s *grpc) List(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error) {
 	resp, err := s.client.TaskList(ctx, &pb.TaskListRequest{
-		MaxTasksCount: data.MaxTasksCount(),
-		Offset:        data.Offset(),
+		Limit:  data.Limit(),
+		Offset: data.Offset(),
 	})
 
 	if err != nil {

@@ -37,7 +37,7 @@ func (i *implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateReques
 }
 
 func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
-	data := models.NewListTaskData(in.GetMaxTasksCount(), in.GetOffset())
+	data := models.NewListTaskData(in.GetLimit(), in.GetOffset())
 
 	tasks, err := i.s.TasksList(ctx, data)
 	if err != nil {
