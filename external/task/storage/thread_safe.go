@@ -2,9 +2,10 @@ package storage
 
 import (
 	"context"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 	"sync"
 	"time"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 )
 
 type threadSafe struct {

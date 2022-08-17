@@ -1,50 +1,36 @@
 package storage
 
-mport (
-"context"
-"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
-"log"
-"time"
+import (
+	"context"
+	"log"
+	"time"
 
-"github.com/pkg/errors"
-"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
-pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/storage"
-"google.golang.org/grpc"
-"google.golang.org/grpc/credentials/insecure"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+
+	"github.com/pkg/errors"
+
+	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/storage"
+	grpcPkg "google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
-	address           = "localhost:8082"
 	reconnectMaxCount = 5
 	reconnectTimeout  = time.Second
 )
 
-type storage struct {
-	service.iTaskStorage
+type grpc struct {
 	client pb.StorageClient
 }
 
-func newStorage() (*storage, error) {
-	time.Sleep(reconnectTimeout)
+func (s *grpc) Add(ctx context.Context, data *models.AddTaskData) (uint64, error) {
+	request := &pb.TaskAddRequest{Title: data.Title()}
 
-	con, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	for count := 1; err != nil || con == nil; count++ {
-		if count > reconnectMaxCount {
-			return nil, errors.Wrap(err, "service_storage: cannot connect to storage server")
-		}
-
-		log.Printf("cannot connect to server, try to connect #%d of %d in %d\n", count, reconnectMaxCount, reconnectTimeout)
-		time.Sleep(reconnectTimeout)
-		con, err = grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if tmp := data.Description(); tmp != "" {
+		request.Description = &tmp
 	}
 
-	return &storage{
-		client: pb.NewStorageClient(con),
-	}, nil
-}
-
-func (s *storage) Add(ctx context.Context, t *models.Task) (uint64, error) {
-	resp, err := s.client.TaskAdd(ctx, &pb.TaskAddRequest{Task: encodeTask(t)})
+	resp, err := s.client.TaskAdd(ctx, request)
 	if err != nil {
 		return 0, err
 	}
@@ -52,39 +38,41 @@ func (s *storage) Add(ctx context.Context, t *models.Task) (uint64, error) {
 	return resp.GetID(), nil
 }
 
-func (s *storage) Delete(ctx context.Context, ID uint64) error {
-	_, err := s.client.TaskDelete(ctx, &pb.TaskDeleteRequest{ID: ID})
-	if err != nil {
-		return err
-	}
+func (s *grpc) Delete(ctx context.Context, data *models.DeleteTaskData) error {
+	_, err := s.client.TaskDelete(ctx, &pb.TaskDeleteRequest{ID: data.ID()})
 
-	return nil
+	return err
 }
 
-func (s *storage) List(ctx context.Context, limit, offset uint64) ([]*models.Task, error) {
+func (s *grpc) List(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error) {
 	resp, err := s.client.TaskList(ctx, &pb.TaskListRequest{
-		Limit:  limit,
-		Offset: offset,
+		MaxTasksCount: data.MaxTasksCount(),
+		Offset:        data.Offset(),
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	res := make([]*models.Task, 0, len(resp.GetTasks()))
-	for _, task := range resp.GetTasks() {
-		decoded, err := decodeTask(task)
-		if err != nil {
-			return nil, err
-		}
-		res = append(res, decoded)
+	res := make([]*models.Task, len(resp.GetTasks()))
+	for i, task := range resp.GetTasks() {
+		res[i] = models.NewTask(task.GetID(), task.GetTitle())
 	}
 
 	return res, nil
 }
 
-func (s *storage) Update(ctx context.Context, t *models.Task) error {
-	_, err := s.client.TaskUpdate(ctx, &pb.TaskUpdateRequest{Task: encodeTask(t)})
+func (s *grpc) Update(ctx context.Context, data *models.UpdateTaskData) error {
+	request := &pb.TaskUpdateRequest{
+		ID:    data.ID(),
+		Title: data.Title(),
+	}
+
+	if tmp := data.Description(); tmp != "" {
+		request.Description = &tmp
+	}
+
+	_, err := s.client.TaskUpdate(ctx, request)
 	if err != nil {
 		return err
 	}
@@ -92,45 +80,30 @@ func (s *storage) Update(ctx context.Context, t *models.Task) error {
 	return nil
 }
 
-func (s *storage) Get(ctx context.Context, ID uint64) (*models.Task, error) {
-	resp, err := s.client.TaskGet(ctx, &pb.TaskGetRequest{ID: uint64(ID)})
+func (s *grpc) Get(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error) {
+	resp, err := s.client.TaskGet(ctx, &pb.TaskGetRequest{ID: data.ID()})
 	if err != nil {
 		return nil, err
 	}
 
-	decoded, err := decodeTask(resp.GetTask())
-	if err != nil {
-		return nil, err
-	}
-
-	return decoded, nil
+	return models.NewDetailedTask(resp.GetTitle(), resp.GetDescription(), time.Unix(resp.GetEdited(), 0)), nil
 }
 
-func encodeTask(in *models.Task) *pb.Task {
-	task := pb.Task{
-		ID:      in.ID,
-		Title:   in.Title,
-		Created: in.Created.Unix(),
-		Updated: in.Edited.Unix(),
+func newGRPC(address string) (*grpc, error) {
+	time.Sleep(reconnectTimeout)
+
+	con, err := grpcPkg.Dial(address, grpcPkg.WithTransportCredentials(insecure.NewCredentials()))
+	for count := 1; err != nil || con == nil; count++ {
+		if count > reconnectMaxCount {
+			return nil, errors.Wrap(err, "service_storage: cannot connect to storage server")
+		}
+
+		log.Printf("cannot connect to server, try to connect #%d of %d in %d\n", count, reconnectMaxCount, reconnectTimeout)
+		time.Sleep(reconnectTimeout)
+		con, err = grpcPkg.Dial(address, grpcPkg.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
-	if in.Description != "" {
-		task.Description = &in.Description
-	}
-
-	return &task
-}
-
-func decodeTask(in *pb.Task) (*models.Task, error) {
-	if in == nil {
-		return nil, errors.New("task_decoding: empty data")
-	}
-
-	return &models.Task{
-		ID:          in.GetID(),
-		Title:       in.GetTitle(),
-		Description: in.GetDescription(),
-		Created:     time.Unix(in.GetCreated(), 0),
-		Edited:      time.Unix(in.GetUpdated(), 0),
+	return &grpc{
+		client: pb.NewStorageClient(con),
 	}, nil
 }

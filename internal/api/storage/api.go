@@ -2,10 +2,8 @@ package storage
 
 import (
 	"context"
-	"time"
 
-	"github.com/pkg/errors"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/storage"
 )
 
@@ -27,42 +25,13 @@ func NewAPI(s iTaskStorage) pb.StorageServer {
 	return &implementation{s: s}
 }
 
-func encodeTask(in *models.Task) *pb.Task {
-	task := pb.Task{
-		ID:      in.ID,
-		Title:   in.Title,
-		Created: in.Created.Unix(),
-		Updated: in.Edited.Unix(),
-	}
-
-	if in.Description != "" {
-		task.Description = &in.Description
-	}
-
-	return &task
-}
-
-func decodeTask(in *pb.Task) (*models.Task, error) {
-	if in == nil {
-		return nil, errors.New("task_decoding: empty data")
-	}
-
-	return &models.Task{
-		ID:          in.GetID(),
+func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*pb.TaskAddResponse, error) {
+	task := models.Task{
 		Title:       in.GetTitle(),
 		Description: in.GetDescription(),
-		Created:     time.Unix(in.GetCreated(), 0),
-		Edited:      time.Unix(in.GetUpdated(), 0),
-	}, nil
-}
-
-func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*pb.TaskAddResponse, error) {
-	decoded, err := decodeTask(in.GetTask())
-	if err != nil {
-		return nil, err
 	}
 
-	id, err := i.s.Add(ctx, decoded)
+	id, err := i.s.Add(ctx, &task)
 	if err != nil {
 		return nil, err
 	}
@@ -71,26 +40,30 @@ func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*p
 }
 
 func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
-	tasks, err := i.s.List(ctx, in.GetLimit(), in.GetOffset())
+	tasks, err := i.s.List(ctx, in.GetMaxTasksCount(), in.GetOffset())
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]*pb.Task, len(tasks))
+	result := make([]*pb.TaskListResponse_Task, len(tasks))
 	for i, t := range tasks {
-		result[i] = encodeTask(t)
+		result[i] = &pb.TaskListResponse_Task{
+			ID:    t.ID,
+			Title: t.Title,
+		}
 	}
 
 	return &pb.TaskListResponse{Tasks: result}, nil
 }
 
 func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateRequest) (*pb.TaskUpdateResponse, error) {
-	decoded, err := decodeTask(in.GetTask())
-	if err != nil {
-		return nil, err
+	task := models.Task{
+		ID:          in.GetID(),
+		Title:       in.GetTitle(),
+		Description: in.GetDescription(),
 	}
 
-	if err := i.s.Update(ctx, decoded); err != nil {
+	if err := i.s.Update(ctx, &task); err != nil {
 		return nil, err
 	}
 
@@ -111,5 +84,15 @@ func (i *implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*p
 		return nil, err
 	}
 
-	return &pb.TaskGetResponse{Task: encodeTask(task)}, nil
+	res := &pb.TaskGetResponse{
+		Title:   task.Title,
+		Edited:  task.Edited.Unix(),
+		Created: task.Created.Unix(),
+	}
+
+	if task.Description != "" {
+		res.Description = &task.Description
+	}
+
+	return res, nil
 }
