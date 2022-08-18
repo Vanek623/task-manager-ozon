@@ -7,11 +7,11 @@ import (
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 )
 
-type repository struct {
+type sqlxDb struct {
 	db *sqlx.DB
 }
 
-func (p *repository) Add(ctx context.Context, t *models.Task) (uint64, error) {
+func (p *sqlxDb) Add(ctx context.Context, t *models.Task) (uint64, error) {
 	const query = "INSERT INTO tasks (title, description) VALUES ($1, $2) RETURNING id"
 
 	row := p.db.QueryRow(query, t.Title, t.Description)
@@ -24,8 +24,8 @@ func (p *repository) Add(ctx context.Context, t *models.Task) (uint64, error) {
 	return id, nil
 }
 
-func (p *repository) Delete(ctx context.Context, ID uint64) error {
-	const query = "DELETE FROM tasks WHERE id = $1 RETURNING 1"
+func (p *sqlxDb) Delete(ctx context.Context, ID uint64) error {
+	const query = "DELETE FROM tasks WHERE id = $1 RETURNING id"
 
 	res := p.db.QueryRow(query, ID)
 	if res.Scan(&ID) != nil {
@@ -35,7 +35,7 @@ func (p *repository) Delete(ctx context.Context, ID uint64) error {
 	return nil
 }
 
-func (p *repository) List(ctx context.Context, limit, offset uint64) ([]*models.Task, error) {
+func (p *sqlxDb) List(ctx context.Context, limit, offset uint64) ([]*models.Task, error) {
 	const query = "SELECT * FROM tasks ORDER BY id LIMIT $1 OFFSET $2"
 
 	var tasks []*models.Task
@@ -47,7 +47,7 @@ func (p *repository) List(ctx context.Context, limit, offset uint64) ([]*models.
 	return tasks, nil
 }
 
-func (p *repository) Update(ctx context.Context, t *models.Task) error {
+func (p *sqlxDb) Update(ctx context.Context, t *models.Task) error {
 	const query = "UPDATE tasks SET title = $1, description = $2, edited = NOW() WHERE id = $3 RETURNING 1"
 
 	res := p.db.QueryRow(query, t.Title, t.Description, t.ID)
@@ -59,7 +59,7 @@ func (p *repository) Update(ctx context.Context, t *models.Task) error {
 	return nil
 }
 
-func (p *repository) Get(ctx context.Context, ID uint64) (*models.Task, error) {
+func (p *sqlxDb) Get(ctx context.Context, ID uint64) (*models.Task, error) {
 	const query = "SELECT * FROM tasks WHERE id = $1"
 
 	var task models.Task

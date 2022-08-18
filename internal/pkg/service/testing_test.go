@@ -1,26 +1,29 @@
 package service
 
 import (
-	"github.com/golang/mock/gomock"
-	mock_service "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/mocks"
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/jmoiron/sqlx"
 	"testing"
 )
 
-type serviceFixture struct {
-	service *Service
-	storage *mock_service.MockiStorage
+type taskStorageFixture struct {
+	service iStorage
+	db      *sqlx.DB
+	dbMock  sqlmock.Sqlmock
 }
 
-func setUp(t *testing.T) serviceFixture {
+func setUp(t *testing.T) taskStorageFixture {
 	t.Parallel()
-	var f serviceFixture
-	var err error
-	f.storage = mock_service.NewMockiStorage(gomock.NewController(t))
-	f.service, err = New(f.storage)
 
+	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	f := taskStorageFixture{}
+	f.db = sqlx.NewDb(db, "sqlmock")
+	f.dbMock = mock
+	f.service = New()
 
 	return f
 }

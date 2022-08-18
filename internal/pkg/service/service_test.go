@@ -16,13 +16,3 @@ func TestService_GetTask(t *testing.T) {
 	t.Parallel()
 
 }
-
-func TestService_TasksList(t *testing.T) {
-	t.Parallel()
-
-}
-
-func TestService_UpdateTask(t *testing.T) {
-	t.Parallel()
-	
-}

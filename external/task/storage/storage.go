@@ -58,5 +58,5 @@ func NewPostgres(pool *pgxpool.Pool, isThreadSafe bool) *Storage {
 }
 
 func NewRepository(db *sqlx.DB) *Storage {
-	return &Storage{newThreadSafeStorage(&repository{db: db}, maxWorkers, workerIdleTimeout)}
+	return &Storage{newThreadSafeStorage(&sqlxDb{db: db}, maxWorkers, workerIdleTimeout)}
 }
