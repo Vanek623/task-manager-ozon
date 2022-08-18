@@ -34,10 +34,10 @@ type Service struct {
 }
 
 // New создать структуру бизнес логики
-func New(s iStorage) (*Service, error) {
+func New(s iStorage) *Service {
 	return &Service{
 		storage: s,
-	}, nil
+	}
 }
 
 // AddTask добавить задачу

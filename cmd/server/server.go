@@ -45,10 +45,7 @@ func Run() {
 		log.Fatal(err)
 	}
 
-	s, err := service.New(storage)
-	if err != nil {
-		log.Fatal(err)
-	}
+	s := service.New(storage)
 
 	go func() {
 		defer wg.Done()
