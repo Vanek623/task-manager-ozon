@@ -2,9 +2,10 @@ package command
 
 import (
 	"context"
-	"github.com/golang/mock/gomock"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/mocks"
 	"testing"
+
+	"github.com/golang/mock/gomock"
+	mock_service "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/mocks"
 )
 
 type serviceFixture struct {

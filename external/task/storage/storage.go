@@ -1,10 +1,12 @@
 //go:generate mockgen -source ./storage.go -destination=./mocks/storage.go -package=mock_repository
+
 package storage
 
 import (
 	"context"
-	"github.com/jmoiron/sqlx"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 
@@ -57,6 +59,7 @@ func NewPostgres(pool *pgxpool.Pool, isThreadSafe bool) *Storage {
 	return &Storage{&postgres{pool: pool}}
 }
 
-func NewRepository(db *sqlx.DB) *Storage {
+// NewSqlx создание хранилища Sqlx
+func NewSqlx(db *sqlx.DB) *Storage {
 	return &Storage{newThreadSafeStorage(&sqlxDb{db: db}, maxWorkers, workerIdleTimeout)}
 }

@@ -1,12 +1,13 @@
 package command
 
 import (
+	"testing"
+	"time"
+
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
-	"testing"
-	"time"
 )
 
 func TestAddCommand_Execute(t *testing.T) {

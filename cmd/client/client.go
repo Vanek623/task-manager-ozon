@@ -3,10 +3,11 @@ package client
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
-	clientPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/client"
 	"log"
 	"sync"
+
+	"github.com/pkg/errors"
+	clientPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/client"
 
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
 )

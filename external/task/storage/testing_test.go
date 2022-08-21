@@ -1,9 +1,10 @@
 package storage
 
 import (
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
-	"testing"
 )
 
 type taskStorageFixture struct {
@@ -23,7 +24,7 @@ func setUp(t *testing.T) taskStorageFixture {
 	fixture.db = sqlx.NewDb(db, "sqlmock")
 
 	fixture.dbMock = mock
-	fixture.s = NewRepository(fixture.db)
+	fixture.s = NewSqlx(fixture.db)
 
 	return fixture
 }
