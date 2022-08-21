@@ -48,7 +48,7 @@ func (p *sqlxDb) List(ctx context.Context, limit, offset uint64) ([]*models.Task
 }
 
 func (p *sqlxDb) Update(ctx context.Context, t *models.Task) error {
-	const query = "UPDATE tasks SET title = $1, description = $2, edited = NOW() WHERE id = $3 RETURNING 1"
+	const query = "UPDATE tasks SET title = $1, description = $2, edited = NOW() WHERE id = $3 RETURNING id"
 
 	res := p.db.QueryRow(query, t.Title, t.Description, t.ID)
 	var tmp int

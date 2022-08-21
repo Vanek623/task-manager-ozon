@@ -13,7 +13,8 @@ func TestAddCommand_Execute(t *testing.T) {
 	t.Run("normal_full", func(t *testing.T) {
 		// arrange
 		f := addCommandSetUp(t)
-		f.service.EXPECT().AddTask(gomock.Any(), gomock.Any()).Return(uint64(1), nil)
+		f.service.EXPECT().AddTask(gomock.Any(), models.NewAddTaskData("test", "test")).
+			Return(uint64(1), nil)
 		// act
 		res := f.command.Execute(f.Ctx, "test test")
 		// assert
@@ -32,7 +33,8 @@ func TestAddCommand_Execute(t *testing.T) {
 	t.Run("internal_error", func(t *testing.T) {
 		// arrange
 		f := addCommandSetUp(t)
-		f.service.EXPECT().AddTask(gomock.Any(), gomock.Any()).Return(uint64(0), errors.New("internal error"))
+		f.service.EXPECT().AddTask(gomock.Any(), models.NewAddTaskData("test", "test")).
+			Return(uint64(0), errors.New("internal error"))
 		// act
 		res := f.command.Execute(f.Ctx, "test test")
 		// assert
@@ -96,7 +98,7 @@ func TestGetCommand_Execute(t *testing.T) {
 		// arrange
 		f := getCommandSetUp(t)
 		actual := models.NewDetailedTask("test", "test", time.Now())
-		f.service.EXPECT().GetTask(gomock.Any(), gomock.Any()).Return(nil, errors.New(""))
+		f.service.EXPECT().GetTask(gomock.Any(), models.NewGetTaskData(1)).Return(nil, errors.New(""))
 		// act
 		res := f.command.Execute(f.Ctx, "1")
 		// assert
@@ -107,7 +109,7 @@ func TestGetCommand_Execute(t *testing.T) {
 		// arrange
 		f := getCommandSetUp(t)
 		actual := models.NewDetailedTask("test", "test", time.Now())
-		f.service.EXPECT().GetTask(gomock.Any(), gomock.Any()).Return(nil, errors.New(""))
+		f.service.EXPECT().GetTask(gomock.Any(), models.NewGetTaskData(1)).Return(nil, errors.New(""))
 		// act
 		res := f.command.Execute(f.Ctx, "1")
 		// assert

@@ -59,11 +59,11 @@ func TestSqlxDb_Delete(t *testing.T) {
 		f := setUp(t)
 		defer f.tearDown()
 
-		query := regexp.QuoteMeta(`DELETE FROM tasks WHERE id = $1 RETURNING 1`)
+		query := regexp.QuoteMeta(`DELETE FROM tasks WHERE id = $1 RETURNING id`)
 
-		rows := sqlmock.NewRows([]string{"id"}).AddRow("1")
+		rows := sqlmock.NewRows([]string{"id"}).AddRow(1)
 		f.dbMock.ExpectQuery(query).
-			WithArgs("1").
+			WithArgs(1).
 			WillReturnRows(rows)
 		// act
 		err := f.s.Delete(context.Background(), 1)
@@ -77,22 +77,62 @@ func TestSqlxDb_Delete(t *testing.T) {
 		f := setUp(t)
 		defer f.tearDown()
 
-		query := regexp.QuoteMeta(`DELETE FROM tasks WHERE id = $1 RETURNING 1`)
+		query := regexp.QuoteMeta(`DELETE FROM tasks WHERE id = $1 RETURNING id`)
 
 		f.dbMock.ExpectQuery(query).
-			WithArgs("1").
-			WillReturnRows(nil)
+			WithArgs(1).
+			WillReturnRows(sqlmock.NewRows([]string{"id"}))
 		// act
 		err := f.s.Delete(context.Background(), 1)
 
 		// assert
 		assert.Error(t, err)
 	})
-
 }
 
 func TestSqlxDb_Update(t *testing.T) {
-	f := setUp(t)
-	defer f.tearDown()
+	t.Run("normal", func(t *testing.T) {
+		f := setUp(t)
+		defer f.tearDown()
 
+		query := regexp.QuoteMeta(`UPDATE tasks SET title = $1, description = $2, edited = NOW() WHERE id = $3 RETURNING id`)
+
+		f.dbMock.ExpectQuery(query).
+			WithArgs("test_t", "test_d", 1).
+			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+		err := f.s.Update(context.Background(), &models.Task{ID: 1, Title: "test_t", Description: "test_d"})
+
+		assert.NoError(t, err)
+	})
+
+	t.Run("no_task", func(t *testing.T) {
+		f := setUp(t)
+		defer f.tearDown()
+
+		query := regexp.QuoteMeta(`UPDATE tasks SET title = $1, description = $2, edited = NOW() WHERE id = $3 RETURNING id`)
+
+		f.dbMock.ExpectQuery(query).
+			WithArgs("test_t", "test_d", 1).
+			WillReturnRows(sqlmock.NewRows([]string{"id"}))
+
+		err := f.s.Update(context.Background(), &models.Task{ID: 1, Title: "test_t", Description: "test_d"})
+
+		assert.Error(t, err)
+	})
+
+	t.Run("normal", func(t *testing.T) {
+		f := setUp(t)
+		defer f.tearDown()
+
+		query := regexp.QuoteMeta(`UPDATE tasks SET title = $1, description = $2, edited = NOW() WHERE id = $3 RETURNING id`)
+
+		f.dbMock.ExpectQuery(query).
+			WithArgs("test_t", "test_d", 1).
+			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+		err := f.s.Update(context.Background(), &models.Task{ID: 1, Title: "test_t", Description: "test_d"})
+
+		assert.NoError(t, err)
+	})
 }
