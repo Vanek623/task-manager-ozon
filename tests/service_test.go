@@ -96,6 +96,6 @@ func TestService_UpdateTask(t *testing.T) {
 		})
 
 		// assert
-		assert.NoError(t, err)
+		assert.Error(t, err)
 	})
 }
