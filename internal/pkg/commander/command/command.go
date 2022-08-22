@@ -20,11 +20,11 @@ type ICommand interface {
 }
 
 type iService interface {
-	AddTask(ctx context.Context, data models.AddTaskData) (uint, error)
-	DeleteTask(ctx context.Context, data models.DeleteTaskData) error
-	TasksList(ctx context.Context, data models.ListTaskData) ([]models.TaskBrief, error)
-	UpdateTask(ctx context.Context, data models.UpdateTaskData) error
-	GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error)
+	AddTask(ctx context.Context, data *models.AddTaskData) (uint64, error)
+	DeleteTask(ctx context.Context, data *models.DeleteTaskData) error
+	TasksList(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error)
+	UpdateTask(ctx context.Context, data *models.UpdateTaskData) error
+	GetTask(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error)
 }
 
 type command struct {

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 )
 
 type threadSafe struct {
@@ -22,7 +22,7 @@ func newThreadSafeStorage(storage iTaskStorage, maxWorkers uint, timeout time.Du
 }
 
 // Add добавление задачи
-func (s *threadSafe) Add(ctx context.Context, t models.Task) (ID uint, err error) {
+func (s *threadSafe) Add(ctx context.Context, t *models.Task) (ID uint64, err error) {
 	if err = s.limiter.start(ctx); err != nil {
 		return
 	}
@@ -36,7 +36,7 @@ func (s *threadSafe) Add(ctx context.Context, t models.Task) (ID uint, err error
 }
 
 // Delete удаление задачи
-func (s *threadSafe) Delete(ctx context.Context, ID uint) error {
+func (s *threadSafe) Delete(ctx context.Context, ID uint64) error {
 	if err := s.limiter.start(ctx); err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (s *threadSafe) Delete(ctx context.Context, ID uint) error {
 }
 
 // List чтение списка задач
-func (s *threadSafe) List(ctx context.Context, limit, offset uint) ([]models.Task, error) {
+func (s *threadSafe) List(ctx context.Context, limit, offset uint64) ([]*models.Task, error) {
 	if err := s.limiter.start(ctx); err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (s *threadSafe) List(ctx context.Context, limit, offset uint) ([]models.Tas
 }
 
 // Update обновление задачи
-func (s *threadSafe) Update(ctx context.Context, t models.Task) error {
+func (s *threadSafe) Update(ctx context.Context, t *models.Task) error {
 	if err := s.limiter.start(ctx); err != nil {
 		return err
 	}
@@ -78,7 +78,7 @@ func (s *threadSafe) Update(ctx context.Context, t models.Task) error {
 }
 
 // Get чтение задачи
-func (s *threadSafe) Get(ctx context.Context, ID uint) (*models.Task, error) {
+func (s *threadSafe) Get(ctx context.Context, ID uint64) (*models.Task, error) {
 	if err := s.limiter.start(ctx); err != nil {
 		return nil, err
 	}

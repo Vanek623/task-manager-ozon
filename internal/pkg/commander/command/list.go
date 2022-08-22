@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	serviceModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 )
 
 const tasksOnPage = 5
@@ -34,10 +34,7 @@ func (c *listCommand) Execute(ctx context.Context, args string) string {
 		}
 	}
 
-	data := serviceModelsPkg.ListTaskData{
-		Limit:  tasksOnPage,
-		Offset: tasksOnPage * (uint(pageNum) - 1),
-	}
+	data := models.NewListTaskData(tasksOnPage, tasksOnPage*(pageNum-1))
 
 	tasks, err := c.service.TasksList(ctx, data)
 	if err != nil {
@@ -50,7 +47,7 @@ func (c *listCommand) Execute(ctx context.Context, args string) string {
 
 	out := make([]string, 0, len(tasks))
 	for _, t := range tasks {
-		out = append(out, fmt.Sprintf("%d. %s", t.ID, t.Title))
+		out = append(out, fmt.Sprintf("%d. %s", t.ID(), t.Title()))
 	}
 
 	return strings.Join(out, "\n")

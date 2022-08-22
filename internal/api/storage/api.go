@@ -2,19 +2,17 @@ package storage
 
 import (
 	"context"
-	"time"
 
-	"github.com/pkg/errors"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/storage"
 )
 
 type iTaskStorage interface {
-	Add(ctx context.Context, t models.Task) (uint, error)
-	Delete(ctx context.Context, ID uint) error
-	List(ctx context.Context, limit, offset uint) ([]models.Task, error)
-	Update(ctx context.Context, t models.Task) error
-	Get(ctx context.Context, ID uint) (*models.Task, error)
+	Add(ctx context.Context, t *models.Task) (uint64, error)
+	Delete(ctx context.Context, ID uint64) error
+	List(ctx context.Context, limit, offset uint64) ([]*models.Task, error)
+	Update(ctx context.Context, t *models.Task) error
+	Get(ctx context.Context, ID uint64) (*models.Task, error)
 }
 
 type implementation struct {
@@ -27,70 +25,45 @@ func NewAPI(s iTaskStorage) pb.StorageServer {
 	return &implementation{s: s}
 }
 
-func codeTask(in *models.Task) *pb.Task {
-	task := pb.Task{
-		ID:      uint64(in.ID),
-		Title:   in.Title,
-		Created: in.Created.Unix(),
-		Updated: in.Edited.Unix(),
-	}
-
-	if in.Description != "" {
-		task.Description = &in.Description
-	}
-
-	return &task
-}
-
-func decodeTask(in *pb.Task) (*models.Task, error) {
-	if in == nil {
-		return nil, errors.New("task_decoding: empty data")
-	}
-
-	return &models.Task{
-		ID:          uint(in.GetID()),
+func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*pb.TaskAddResponse, error) {
+	task := models.Task{
 		Title:       in.GetTitle(),
 		Description: in.GetDescription(),
-		Created:     time.Unix(in.GetCreated(), 0),
-		Edited:      time.Unix(in.GetUpdated(), 0),
-	}, nil
-}
+	}
 
-func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*pb.TaskAddResponse, error) {
-	decoded, err := decodeTask(in.GetTask())
+	id, err := i.s.Add(ctx, &task)
 	if err != nil {
 		return nil, err
 	}
 
-	ID, err := i.s.Add(ctx, *decoded)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pb.TaskAddResponse{ID: uint64(ID)}, nil
+	return &pb.TaskAddResponse{ID: id}, nil
 }
 
 func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
-	tasks, err := i.s.List(ctx, uint(in.GetLimit()), uint(in.GetOffset()))
+	tasks, err := i.s.List(ctx, in.GetLimit(), in.GetOffset())
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]*pb.Task, 0, len(tasks))
-	for i := range tasks {
-		result = append(result, codeTask(&tasks[i]))
+	result := make([]*pb.TaskListResponse_Task, len(tasks))
+	for i, t := range tasks {
+		result[i] = &pb.TaskListResponse_Task{
+			ID:    t.ID,
+			Title: t.Title,
+		}
 	}
 
 	return &pb.TaskListResponse{Tasks: result}, nil
 }
 
 func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateRequest) (*pb.TaskUpdateResponse, error) {
-	task, err := decodeTask(in.GetTask())
-	if err != nil {
-		return nil, err
+	task := models.Task{
+		ID:          in.GetID(),
+		Title:       in.GetTitle(),
+		Description: in.GetDescription(),
 	}
 
-	if err := i.s.Update(ctx, *task); err != nil {
+	if err := i.s.Update(ctx, &task); err != nil {
 		return nil, err
 	}
 
@@ -98,7 +71,7 @@ func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateReques
 }
 
 func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteRequest) (*pb.TaskDeleteResponse, error) {
-	if err := i.s.Delete(ctx, uint(in.GetID())); err != nil {
+	if err := i.s.Delete(ctx, in.GetID()); err != nil {
 		return nil, err
 	}
 
@@ -106,10 +79,20 @@ func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteReques
 }
 
 func (i *implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*pb.TaskGetResponse, error) {
-	task, err := i.s.Get(ctx, uint(in.ID))
+	task, err := i.s.Get(ctx, in.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.TaskGetResponse{Task: codeTask(task)}, nil
+	res := &pb.TaskGetResponse{
+		Title:   task.Title,
+		Edited:  task.Edited.Unix(),
+		Created: task.Created.Unix(),
+	}
+
+	if task.Description != "" {
+		res.Description = &task.Description
+	}
+
+	return res, nil
 }

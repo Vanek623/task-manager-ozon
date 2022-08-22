@@ -6,10 +6,11 @@ import (
 	"log"
 	"net"
 
+	storagePkg "gitlab.ozon.dev/Vanek623/task-manager-system/external/task/storage"
+
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
 	storageApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api/storage"
-	storagePkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/storage"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/storage"
 	"google.golang.org/grpc"
 )

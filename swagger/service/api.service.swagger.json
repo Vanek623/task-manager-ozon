@@ -1,12 +1,12 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "storage/api.proto",
+    "title": "service/api.service.proto",
     "version": "version not set"
   },
   "tags": [
     {
-      "name": "Storage"
+      "name": "Service"
     }
   ],
   "consumes": [
@@ -16,14 +16,16 @@
     "application/json"
   ],
   "paths": {
-    "/v1/storage/task": {
+    "/v1/service/task": {
       "get": {
-        "operationId": "Storage_TaskGet",
+        "summary": "Получение задачи",
+        "description": "Получение подробной информации о задаче.",
+        "operationId": "Service_TaskGet",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/storageTaskGetResponse"
+              "$ref": "#/definitions/serviceTaskGetResponse"
             }
           },
           "default": {
@@ -36,6 +38,7 @@
         "parameters": [
           {
             "name": "ID",
+            "description": "Идентификатор задачи",
             "in": "query",
             "required": false,
             "type": "string",
@@ -43,16 +46,18 @@
           }
         ],
         "tags": [
-          "Storage"
+          "Service"
         ]
       },
       "delete": {
-        "operationId": "Storage_TaskDelete",
+        "summary": "Удаление задачи",
+        "description": "Удаление задачи.",
+        "operationId": "Service_TaskDelete",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/storageTaskDeleteResponse"
+              "$ref": "#/definitions/serviceTaskDeleteResponse"
             }
           },
           "default": {
@@ -68,21 +73,23 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/storageTaskDeleteRequest"
+              "$ref": "#/definitions/serviceTaskDeleteRequest"
             }
           }
         ],
         "tags": [
-          "Storage"
+          "Service"
         ]
       },
       "post": {
-        "operationId": "Storage_TaskAdd",
+        "summary": "Создание задачи",
+        "description": "Создание задачи.",
+        "operationId": "Service_TaskCreate",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/storageTaskAddResponse"
+              "$ref": "#/definitions/serviceTaskCreateResponse"
             }
           },
           "default": {
@@ -98,21 +105,23 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/storageTaskAddRequest"
+              "$ref": "#/definitions/serviceTaskCreateRequest"
             }
           }
         ],
         "tags": [
-          "Storage"
+          "Service"
         ]
       },
       "put": {
-        "operationId": "Storage_TaskUpdate",
+        "summary": "Обновление задачи",
+        "description": "Обновление задачи.",
+        "operationId": "Service_TaskUpdate",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/storageTaskUpdateResponse"
+              "$ref": "#/definitions/serviceTaskUpdateResponse"
             }
           },
           "default": {
@@ -128,23 +137,25 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/storageTaskUpdateRequest"
+              "$ref": "#/definitions/serviceTaskUpdateRequest"
             }
           }
         ],
         "tags": [
-          "Storage"
+          "Service"
         ]
       }
     },
-    "/v1/storage/tasks": {
+    "/v1/service/tasks": {
       "get": {
-        "operationId": "Storage_TaskList",
+        "summary": "Получение списка задач",
+        "description": "Получение списка задач.",
+        "operationId": "Service_TaskList",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/storageTaskListResponse"
+              "$ref": "#/definitions/serviceTaskListResponse"
             }
           },
           "default": {
@@ -157,26 +168,42 @@
         "parameters": [
           {
             "name": "Limit",
+            "description": "Максимальное количество задач",
             "in": "query",
             "required": false,
-            "type": "integer",
-            "format": "int64"
+            "type": "string",
+            "format": "uint64"
           },
           {
             "name": "Offset",
+            "description": "Порядковый номер, с которого будут выводится задачи",
             "in": "query",
             "required": false,
-            "type": "integer",
-            "format": "int64"
+            "type": "string",
+            "format": "uint64"
           }
         ],
         "tags": [
-          "Storage"
+          "Service"
         ]
       }
     }
   },
   "definitions": {
+    "TaskListResponseTask": {
+      "type": "object",
+      "properties": {
+        "ID": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Идентификатор задачи"
+        },
+        "title": {
+          "type": "string",
+          "title": "Заголовок задачи"
+        }
+      }
+    },
     "protobufAny": {
       "type": "object",
       "properties": {
@@ -204,38 +231,18 @@
         }
       }
     },
-    "storageTask": {
+    "serviceTaskCreateRequest": {
       "type": "object",
       "properties": {
-        "ID": {
-          "type": "string",
-          "format": "uint64"
-        },
-        "Title": {
+        "title": {
           "type": "string"
         },
-        "Description": {
+        "description": {
           "type": "string"
-        },
-        "Created": {
-          "type": "string",
-          "format": "int64"
-        },
-        "Updated": {
-          "type": "string",
-          "format": "int64"
         }
       }
     },
-    "storageTaskAddRequest": {
-      "type": "object",
-      "properties": {
-        "task": {
-          "$ref": "#/definitions/storageTask"
-        }
-      }
-    },
-    "storageTaskAddResponse": {
+    "serviceTaskCreateResponse": {
       "type": "object",
       "properties": {
         "ID": {
@@ -244,46 +251,68 @@
         }
       }
     },
-    "storageTaskDeleteRequest": {
+    "serviceTaskDeleteRequest": {
       "type": "object",
       "properties": {
         "ID": {
           "type": "string",
-          "format": "uint64"
+          "format": "uint64",
+          "title": "Идентификатор задачи"
         }
       }
     },
-    "storageTaskDeleteResponse": {
+    "serviceTaskDeleteResponse": {
       "type": "object"
     },
-    "storageTaskGetResponse": {
+    "serviceTaskGetResponse": {
       "type": "object",
       "properties": {
-        "task": {
-          "$ref": "#/definitions/storageTask"
+        "title": {
+          "type": "string",
+          "title": "Заголовок задачи"
+        },
+        "description": {
+          "type": "string",
+          "title": "Описание задачи"
+        },
+        "edited": {
+          "type": "string",
+          "format": "int64",
+          "title": "Время последнего редактирования"
         }
       }
     },
-    "storageTaskListResponse": {
+    "serviceTaskListResponse": {
       "type": "object",
       "properties": {
         "tasks": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/storageTask"
-          }
+            "$ref": "#/definitions/TaskListResponseTask"
+          },
+          "title": "Список задач"
         }
       }
     },
-    "storageTaskUpdateRequest": {
+    "serviceTaskUpdateRequest": {
       "type": "object",
       "properties": {
-        "task": {
-          "$ref": "#/definitions/storageTask"
+        "ID": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Идентификатор задачи"
+        },
+        "title": {
+          "type": "string",
+          "title": "Заголовок задачи"
+        },
+        "description": {
+          "type": "string",
+          "title": "Описание задачи"
         }
       }
     },
-    "storageTaskUpdateResponse": {
+    "serviceTaskUpdateResponse": {
       "type": "object"
     }
   }

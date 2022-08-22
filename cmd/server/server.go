@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"google.golang.org/grpc/credentials/insecure"
+	serviceStorage "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage"
+	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
 
@@ -18,16 +18,18 @@ import (
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
-	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc/credentials/insecure"
+
 	"google.golang.org/grpc"
 )
 
 type iService interface {
-	AddTask(ctx context.Context, data models.AddTaskData) (uint, error)
-	DeleteTask(ctx context.Context, data models.DeleteTaskData) error
-	TasksList(ctx context.Context, data models.ListTaskData) ([]models.TaskBrief, error)
-	UpdateTask(ctx context.Context, data models.UpdateTaskData) error
-	GetTask(ctx context.Context, data models.GetTaskData) (*models.DetailedTask, error)
+	AddTask(ctx context.Context, data *models.AddTaskData) (uint64, error)
+	DeleteTask(ctx context.Context, data *models.DeleteTaskData) error
+	TasksList(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error)
+	UpdateTask(ctx context.Context, data *models.UpdateTaskData) error
+	GetTask(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error)
 }
 
 // Run запуск GRPC, REST and Tg Bot
@@ -38,7 +40,12 @@ func Run() {
 	ctx, cl := context.WithCancel(context.Background())
 	defer cl()
 
-	s, err := service.New()
+	storage, err := serviceStorage.NewGRPC(storageAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	s, err := service.New(storage)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -78,6 +85,7 @@ func RunGRPC(service iService) {
 	}
 }
 
+// RunREST запускает REST
 func RunREST(ctx context.Context) {
 	ctx, cl := context.WithCancel(ctx)
 	defer cl()

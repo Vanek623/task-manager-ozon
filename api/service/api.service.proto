@@ -76,10 +76,10 @@ message TaskCreateResponse {
 
 message TaskListRequest {
   // Максимальное количество задач
-  uint32 Limit = 1;
+  uint64 Limit = 1;
 
   // Порядковый номер, с которого будут выводится задачи
-  uint32 Offset = 2;
+  uint64 Offset = 2;
 }
 message TaskListResponse {
   // Список задач

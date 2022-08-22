@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	serviceModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 )
 
 type deleteCommand struct {
@@ -23,7 +23,7 @@ func (c *deleteCommand) Execute(ctx context.Context, args string) string {
 		return fmt.Sprintf("Cannot parse %s", argsArr[0])
 	}
 
-	if err = c.service.DeleteTask(ctx, serviceModelsPkg.DeleteTaskData{ID: uint(id)}); err != nil {
+	if err = c.service.DeleteTask(ctx, models.NewDeleteTaskData(id)); err != nil {
 		return err.Error()
 	}
 

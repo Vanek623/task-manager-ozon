@@ -2,8 +2,9 @@ package command
 
 import (
 	"context"
+	"fmt"
 
-	serviceModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 )
 
 type addCommand struct {
@@ -16,14 +17,12 @@ func (c *addCommand) Execute(ctx context.Context, args string) string {
 		return err.Error()
 	}
 
-	if _, err = c.service.AddTask(ctx, serviceModelsPkg.AddTaskData{
-		Title:       argsArr[0],
-		Description: argsArr[1],
-	}); err != nil {
+	id, err := c.service.AddTask(ctx, models.NewAddTaskData(argsArr[0], argsArr[1]))
+	if err != nil {
 		return err.Error()
 	}
 
-	return "TaskBrief added"
+	return fmt.Sprintf("Task #%d added", id)
 }
 
 func newAddCommand(s iService) *addCommand {

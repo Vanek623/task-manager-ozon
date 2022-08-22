@@ -3,57 +3,25 @@ syntax = "proto3";
 package ozon.dev.vanek623.task_manager_bot.api.storage;
 option go_package = "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/storage;storage";
 
-import "google/api/annotations.proto";
-
 service Storage {
-  rpc TaskAdd(TaskAddRequest) returns (TaskAddResponse) {
-    option (google.api.http) = {
-      post: "/v1/storage/task"
-      body: "*"
-    };
-  }
+  rpc TaskAdd(TaskAddRequest) returns (TaskAddResponse) {}
 
-  rpc TaskList(TaskListRequest) returns (TaskListResponse) {
-    option (google.api.http) = {
-      get: "/v1/storage/tasks"
-    };
-  }
+  rpc TaskList(TaskListRequest) returns (TaskListResponse) {}
 
-  rpc TaskUpdate(TaskUpdateRequest) returns (TaskUpdateResponse) {
-    option (google.api.http) = {
-      put: "/v1/storage/task"
-      body: "*"
-    };
-  }
+  rpc TaskUpdate(TaskUpdateRequest) returns (TaskUpdateResponse) {}
 
-  rpc TaskDelete(TaskDeleteRequest) returns (TaskDeleteResponse) {
-    option (google.api.http) = {
-      delete: "/v1/storage/task"
-      body: "*"
-    };
-  }
+  rpc TaskDelete(TaskDeleteRequest) returns (TaskDeleteResponse) {}
 
-  rpc TaskGet(TaskGetRequest) returns (TaskGetResponse) {
-    option (google.api.http) = {
-      get: "/v1/storage/task"
-    };
-  }
-}
-
-message Task {
-  uint64 ID = 1;
-  string Title = 2;
-  optional string Description = 3;
-  int64 Created = 4;
-  int64 Updated = 5;
+  rpc TaskGet(TaskGetRequest) returns (TaskGetResponse) {}
 }
 
 /// ---------------------------------------------------------------------------------------------------------------------
-// TaskAdd endpoint messages
+// TaskCreate endpoint messages
 // ---------------------------------------------------------------------------------------------------------------------
 
 message TaskAddRequest {
-  Task task = 1;
+  string title = 1;
+  optional string description = 2;
 }
 message TaskAddResponse {
   uint64 ID = 1;
@@ -64,11 +32,16 @@ message TaskAddResponse {
 // ---------------------------------------------------------------------------------------------------------------------
 
 message TaskListRequest {
-  uint32 Limit = 1;
-  uint32 Offset = 2;
+  uint64 Limit = 1;
+  uint64 Offset = 2;
 }
 message TaskListResponse {
   repeated Task tasks = 1;
+
+  message Task {
+    uint64 ID = 1;
+    string title = 2;
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -76,7 +49,9 @@ message TaskListResponse {
 // ---------------------------------------------------------------------------------------------------------------------
 
 message TaskUpdateRequest {
-  Task task = 1;
+  uint64 ID = 1;
+  string title = 2;
+  optional string description = 3;
 }
 message TaskUpdateResponse {}
 
@@ -90,12 +65,15 @@ message TaskDeleteRequest {
 message TaskDeleteResponse {}
 
 // ---------------------------------------------------------------------------------------------------------------------
-// TaskGetRequest endpoint messages
+// TaskDelete endpoint messages
 // ---------------------------------------------------------------------------------------------------------------------
 
 message TaskGetRequest {
   uint64  ID = 1;
 }
 message TaskGetResponse {
-  Task task = 1;
+  string title = 1;
+  optional string description = 2;
+  int64 edited = 3;
+  int64 created = 4;
 }

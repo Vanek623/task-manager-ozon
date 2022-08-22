@@ -4,31 +4,32 @@ import (
 	"context"
 	"time"
 
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
+
 	"github.com/pkg/errors"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/core/task/models"
 )
 
 const localCapacity = 100
 
 // local структура локального хранилища
 type local struct {
-	data   map[uint]models.Task
+	data   map[uint64]*models.Task
 	lastID uint64
 }
 
 func newLocal() *local {
 	return &local{
-		data:   make(map[uint]models.Task),
+		data:   make(map[uint64]*models.Task),
 		lastID: 1,
 	}
 }
 
-func (s *local) Add(_ context.Context, t models.Task) (uint, error) {
+func (s *local) Add(_ context.Context, t *models.Task) (uint64, error) {
 	if len(s.data) >= localCapacity {
 		return 0, ErrHasNoSpace
 	}
 
-	t.ID = uint(s.lastID)
+	t.ID = s.lastID
 	s.lastID++
 	t.Created = time.Now()
 
@@ -37,7 +38,7 @@ func (s *local) Add(_ context.Context, t models.Task) (uint, error) {
 	return t.ID, nil
 }
 
-func (s *local) Delete(_ context.Context, ID uint) error {
+func (s *local) Delete(_ context.Context, ID uint64) error {
 	if _, ok := s.data[ID]; !ok {
 		return errors.Wrapf(ErrTaskNotExist, "ID: [%d]", ID)
 	}
@@ -46,8 +47,8 @@ func (s *local) Delete(_ context.Context, ID uint) error {
 	return nil
 }
 
-func (s *local) List(_ context.Context, limit, offset uint) ([]models.Task, error) {
-	res := make([]models.Task, 0, limit)
+func (s *local) List(_ context.Context, limit, offset uint64) ([]*models.Task, error) {
+	res := make([]*models.Task, 0, limit)
 
 	for i, t := range s.data {
 		if i >= offset+limit {
@@ -63,7 +64,7 @@ func (s *local) List(_ context.Context, limit, offset uint) ([]models.Task, erro
 	return res, nil
 }
 
-func (s *local) Update(_ context.Context, t models.Task) error {
+func (s *local) Update(_ context.Context, t *models.Task) error {
 	if _, ok := s.data[t.ID]; !ok {
 		return errors.Wrapf(ErrTaskNotExist, "ID: [%d]", t.ID)
 	}
@@ -74,7 +75,7 @@ func (s *local) Update(_ context.Context, t models.Task) error {
 	return nil
 }
 
-func (s *local) Get(_ context.Context, ID uint) (*models.Task, error) {
+func (s *local) Get(_ context.Context, ID uint64) (*models.Task, error) {
 	time.Sleep(time.Second)
 
 	task, ok := s.data[ID]
@@ -82,5 +83,5 @@ func (s *local) Get(_ context.Context, ID uint) (*models.Task, error) {
 		return nil, errors.Wrapf(ErrTaskNotExist, "ID: [%d]", ID)
 	}
 
-	return &task, nil
+	return task, nil
 }
