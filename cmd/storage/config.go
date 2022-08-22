@@ -1,10 +1,11 @@
 package storage
 
 import (
-	"github.com/joho/godotenv"
 	"log"
 	"os"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 // ConfigDB структура конфигурации БД
@@ -18,6 +19,7 @@ type ConfigDB struct {
 
 var configDB ConfigDB
 
+// GetConfig чтение конфигурации БД
 func GetConfig() ConfigDB {
 	return configDB
 }
@@ -29,8 +31,8 @@ func init() {
 
 	configDB.Host = "localhost"
 	configDB.Port = "5432"
-	configDB.UserName = "task_manager_db"
 	configDB.Name = "task_manager_db"
+	configDB.UserName = configDB.Name
 	configDB.Password = os.Getenv("DB_PASSWORD")
 }
 

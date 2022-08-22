@@ -2,12 +2,13 @@ package server
 
 import (
 	"context"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
-	serviceStorage "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage"
-	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
 	"log"
 	"net"
 	"net/http"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
+	serviceStorage "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage"
+	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
 
