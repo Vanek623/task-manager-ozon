@@ -16,7 +16,7 @@ import (
 )
 
 // Run запуск сервиса хранилища
-func Run(password string) {
+func Run(conf *ConfigDB) {
 	listener, err := net.Listen(connectionType, serviceAddress)
 	if err != nil {
 		log.Fatal(err)
@@ -25,24 +25,26 @@ func Run(password string) {
 	ctx, cl := context.WithCancel(context.Background())
 	defer cl()
 
-	pool, err := connectToDB(ctx, password)
+	pool, err := connectToDB(ctx, conf)
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.Printf("connected to storage with address %s:%s", conf.Host, conf.Port)
+
 	server := grpc.NewServer()
 	storage := storagePkg.NewPostgres(pool, true)
 	pb.RegisterStorageServer(server, storageApiPkg.NewAPI(storage))
 
-	log.Println("grpc started")
+	log.Printf("GRPC up with address %s", serviceAddress)
 
 	if err = server.Serve(listener); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func connectToDB(ctx context.Context, password string) (*pgxpool.Pool, error) {
-	psqlConn := fmt.Sprintf("host=%s port=%d user=%s password=%s "+
-		"dbname=%s sslmode=disable", hostDB, portDB, userName, password, nameDB)
+func connectToDB(ctx context.Context, conf *ConfigDB) (*pgxpool.Pool, error) {
+	psqlConn := fmt.Sprintf("host=%s port=%s user=%s password=%s "+
+		"dbname=%s sslmode=disable", conf.Host, conf.Port, conf.UserName, conf.Password, conf.Name)
 
 	pool, err := pgxpool.Connect(ctx, psqlConn)
 	if err != nil {

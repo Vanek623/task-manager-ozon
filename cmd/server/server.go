@@ -2,15 +2,12 @@ package server
 
 import (
 	"context"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
+	serviceStorage "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage"
+	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
 	"log"
 	"net"
 	"net/http"
-	"sync"
-
-	serviceStorage "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage"
-	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
 
@@ -33,10 +30,7 @@ type iService interface {
 }
 
 // Run запуск GRPC, REST and Tg Bot
-func Run() {
-	var wg sync.WaitGroup
-	wg.Add(3)
-
+func Run() error {
 	ctx, cl := context.WithCancel(context.Background())
 	defer cl()
 
@@ -47,26 +41,14 @@ func Run() {
 
 	s := service.New(storage)
 
-	go func() {
-		defer wg.Done()
-		RunGRPC(s)
-	}()
+	go RunREST(ctx)
+	go bot.Run(ctx, s)
 
-	go func() {
-		defer wg.Done()
-		RunREST(ctx)
-	}()
-
-	go func() {
-		defer wg.Done()
-		bot.Run(s)
-	}()
-
-	wg.Wait()
+	return RunGRPC(s)
 }
 
 // RunGRPC запускает GRPC
-func RunGRPC(service iService) {
+func RunGRPC(service iService) error {
 	listener, err := net.Listen(connectionType, addressGRPC)
 	if err != nil {
 		log.Fatal(err)
@@ -75,25 +57,24 @@ func RunGRPC(service iService) {
 	s := grpc.NewServer()
 	pb.RegisterServiceServer(s, serviceApiPkg.NewAPI(service))
 
-	log.Println("grpc started")
+	log.Printf("GRPC up with address %s", addressGRPC)
 
 	if err = s.Serve(listener); err != nil {
-		log.Fatal(err)
+		return err
 	}
+
+	return nil
 }
 
 // RunREST запускает REST
 func RunREST(ctx context.Context) {
-	ctx, cl := context.WithCancel(ctx)
-	defer cl()
-
 	gwmux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	if err := pb.RegisterServiceHandlerFromEndpoint(ctx, gwmux, addressGRPC, opts); err != nil {
 		log.Fatal(err)
 	}
 
-	log.Println("rest started")
+	log.Printf("REST up with address %s", addressHTTP)
 
 	mux := http.NewServeMux()
 	mux.Handle("/", gwmux)
@@ -101,9 +82,18 @@ func RunREST(ctx context.Context) {
 	fs := http.FileServer(http.Dir(swaggerDir))
 	mux.Handle("/swagger/", http.StripPrefix("/swagger/", fs))
 
-	log.Println("swagger started")
+	log.Printf("swagger up with address %s", addressHTTP)
 
-	if err := http.ListenAndServe(addressHTTP, mux); err != nil {
-		log.Fatal(err)
+	ch := make(chan struct{})
+	go func() {
+		if err := http.ListenAndServe(addressHTTP, mux); err != nil {
+			log.Println(err)
+		}
+		ch <- struct{}{}
+	}()
+
+	select {
+	case <-ctx.Done():
+	case <-ch:
 	}
 }

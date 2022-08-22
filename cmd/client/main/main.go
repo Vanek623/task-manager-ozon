@@ -10,5 +10,5 @@ func main() {
 	ctx, cl := context.WithCancel(context.Background())
 	defer cl()
 
-	client.RunClients(ctx, 2)
+	client.RunClients(ctx, 1)
 }

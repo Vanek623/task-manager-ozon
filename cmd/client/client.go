@@ -62,7 +62,7 @@ func Run(ctx context.Context, ID uint) {
 		}
 	}
 	{
-		response, err := client.TaskList(ctx, &pb.TaskListRequest{})
+		response, err := client.TaskList(ctx, &pb.TaskListRequest{Limit: 5, Offset: 0})
 		if err != nil {
 			log.Println(errors.Wrapf(err, "[%d]", ID))
 		} else {

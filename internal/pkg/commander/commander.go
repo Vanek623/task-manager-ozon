@@ -50,20 +50,30 @@ func (cmdr *Commander) Run(ctx context.Context) error {
 	u.Timeout = timeOutValue
 	updates := cmdr.bot.GetUpdatesChan(u)
 
-	for update := range updates {
-		if update.Message == nil {
-			continue
+	ch := make(chan error)
+	go func() {
+		for update := range updates {
+			if update.Message == nil {
+				continue
+			}
+
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, cmdr.handleMessage(ctx, update.Message))
+
+			_, err := cmdr.bot.Send(msg)
+			if err != nil {
+				ch <- errors.Wrap(err, "send tg message")
+			}
 		}
 
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, cmdr.handleMessage(ctx, update.Message))
+		ch <- nil
+	}()
 
-		_, err := cmdr.bot.Send(msg)
-		if err != nil {
-			return errors.Wrap(err, "send tg message")
-		}
+	select {
+	case err := <-ch:
+		return err
+	case <-ctx.Done():
+		return nil
 	}
-
-	return nil
 }
 
 var startCommandName = "start"
