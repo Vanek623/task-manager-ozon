@@ -3,8 +3,8 @@ package command
 import (
 	"context"
 	"fmt"
-	"strconv"
 
+	"github.com/google/uuid"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 )
 
@@ -18,12 +18,12 @@ func (c *updateCommand) Execute(ctx context.Context, args string) string {
 		return err.Error()
 	}
 
-	id, err := strconv.ParseUint(argsArr[0], 10, 64)
+	id, err := uuid.Parse(argsArr[0])
 	if err != nil {
 		return fmt.Sprintf("Cannot parse %s", argsArr[0])
 	}
 
-	data := models.NewUpdateTaskData(id, argsArr[1], argsArr[2])
+	data := models.NewUpdateTaskData(&id, argsArr[1], argsArr[2])
 	if err = c.service.UpdateTask(ctx, data); err != nil {
 		return err.Error()
 	}

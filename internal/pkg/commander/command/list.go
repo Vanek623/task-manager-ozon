@@ -47,7 +47,7 @@ func (c *listCommand) Execute(ctx context.Context, args string) string {
 
 	out := make([]string, 0, len(tasks))
 	for _, t := range tasks {
-		out = append(out, fmt.Sprintf("%d. %s", t.ID(), t.Title()))
+		out = append(out, fmt.Sprintf("%s. %s", t.ID(), t.Title()))
 	}
 
 	return strings.Join(out, "\n")
