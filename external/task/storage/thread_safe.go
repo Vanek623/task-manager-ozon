@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 )
 
@@ -22,7 +24,7 @@ func newThreadSafeStorage(storage iTaskStorage, maxWorkers uint, timeout time.Du
 }
 
 // Add добавление задачи
-func (s *threadSafe) Add(ctx context.Context, t *models.Task) (ID uint64, err error) {
+func (s *threadSafe) Add(ctx context.Context, t *models.Task) (ID *uuid.UUID, err error) {
 	if err = s.limiter.start(ctx); err != nil {
 		return
 	}
@@ -36,7 +38,7 @@ func (s *threadSafe) Add(ctx context.Context, t *models.Task) (ID uint64, err er
 }
 
 // Delete удаление задачи
-func (s *threadSafe) Delete(ctx context.Context, ID uint64) error {
+func (s *threadSafe) Delete(ctx context.Context, ID *uuid.UUID) error {
 	if err := s.limiter.start(ctx); err != nil {
 		return err
 	}
@@ -78,7 +80,7 @@ func (s *threadSafe) Update(ctx context.Context, t *models.Task) error {
 }
 
 // Get чтение задачи
-func (s *threadSafe) Get(ctx context.Context, ID uint64) (*models.Task, error) {
+func (s *threadSafe) Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error) {
 	if err := s.limiter.start(ctx); err != nil {
 		return nil, err
 	}

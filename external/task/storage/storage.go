@@ -6,6 +6,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/jmoiron/sqlx"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
@@ -16,11 +18,11 @@ import (
 )
 
 type iTaskStorage interface {
-	Add(ctx context.Context, t *models.Task) (uint64, error)
-	Delete(ctx context.Context, ID uint64) error
+	Add(ctx context.Context, t *models.Task) (*uuid.UUID, error)
+	Delete(ctx context.Context, ID *uuid.UUID) error
 	List(ctx context.Context, limit, offset uint64) ([]*models.Task, error)
 	Update(ctx context.Context, t *models.Task) error
-	Get(ctx context.Context, ID uint64) (*models.Task, error)
+	Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error)
 }
 
 var (

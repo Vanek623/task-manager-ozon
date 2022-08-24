@@ -1,7 +1,7 @@
 #!/bin/sh
 
 export MIGRATION_DIR="./migrations"
-export DB_DSN="host=localhost port=5432 user=task_manager_db password=task_manager_db dbname=task_manager_db sslmode=disable"
+export DB_DSN="host=localhost port=5432 user=user password=password dbname=task_manager_db sslmode=disable"
 
 if [ "$1" = "--dryrun" ]; then
     goose -v -dir ${MIGRATION_DIR} postgres "${DB_DSN}" status
