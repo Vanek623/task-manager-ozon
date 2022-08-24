@@ -24,9 +24,9 @@ func newThreadSafeStorage(storage iTaskStorage, maxWorkers uint, timeout time.Du
 }
 
 // Add добавление задачи
-func (s *threadSafe) Add(ctx context.Context, t *models.Task) (ID *uuid.UUID, err error) {
-	if err = s.limiter.start(ctx); err != nil {
-		return
+func (s *threadSafe) Add(ctx context.Context, t *models.Task) error {
+	if err := s.limiter.start(ctx); err != nil {
+		return err
 	}
 
 	defer s.limiter.end()

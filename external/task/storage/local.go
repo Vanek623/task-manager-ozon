@@ -24,16 +24,16 @@ func newLocal() *local {
 	}
 }
 
-func (s *local) Add(_ context.Context, t *models.Task) (*uuid.UUID, error) {
+func (s *local) Add(_ context.Context, t *models.Task) error {
 	if len(s.data) >= localCapacity {
-		return nil, ErrHasNoSpace
+		return ErrHasNoSpace
 	}
 
 	t.Created = time.Now()
 
 	s.data[t.ID] = t
 
-	return &t.ID, nil
+	return nil
 }
 
 func (s *local) Delete(_ context.Context, ID *uuid.UUID) error {

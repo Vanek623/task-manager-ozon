@@ -15,17 +15,17 @@ type postgres struct {
 	pool *pgxpool.Pool
 }
 
-func (p *postgres) Add(ctx context.Context, t *models.Task) (*uuid.UUID, error) {
+func (p *postgres) Add(ctx context.Context, t *models.Task) error {
 	const query = "INSERT INTO tasks (id, title, description) VALUES ($1, $2, $3) RETURNING id"
 
 	row := p.pool.QueryRow(ctx, query, t.ID, t.Title, t.Description)
 
 	var id uuid.UUID
 	if err := row.Scan(&id); err != nil {
-		return nil, err
+		return err
 	}
 
-	return &id, nil
+	return nil
 }
 
 func (p *postgres) Delete(ctx context.Context, ID *uuid.UUID) error {

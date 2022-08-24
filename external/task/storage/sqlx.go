@@ -14,17 +14,17 @@ type sqlxDb struct {
 	db *sqlx.DB
 }
 
-func (p *sqlxDb) Add(_ context.Context, t *models.Task) (*uuid.UUID, error) {
+func (p *sqlxDb) Add(_ context.Context, t *models.Task) error {
 	const query = "INSERT INTO tasks (id, title, description) VALUES ($1, $2, $3) RETURNING id"
 
 	row := p.db.QueryRow(query, t.ID, t.Title, t.Description)
 
 	var id uuid.UUID
 	if err := row.Scan(&id); err != nil {
-		return nil, err
+		return err
 	}
 
-	return &id, nil
+	return nil
 }
 
 func (p *sqlxDb) Delete(_ context.Context, ID *uuid.UUID) error {

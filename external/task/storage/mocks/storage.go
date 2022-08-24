@@ -37,12 +37,11 @@ func (m *MockiTaskStorage) EXPECT() *MockiTaskStorageMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockiTaskStorage) Add(ctx context.Context, t *models.Task) (*uuid.UUID, error) {
+func (m *MockiTaskStorage) Add(ctx context.Context, t *models.Task) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", ctx, t)
-	ret0, _ := ret[0].(*uuid.UUID)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Add indicates an expected call of Add.

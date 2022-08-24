@@ -28,14 +28,13 @@ func TestSqlxDb_Add(t *testing.T) {
 			WithArgs(id, "test_t", "test_d").
 			WillReturnRows(rows)
 		// act
-		res, err := f.s.Add(context.Background(), &models.Task{
+		err := f.s.Add(context.Background(), &models.Task{
 			ID:          id,
 			Title:       "test_t",
 			Description: "test_d",
 		})
 		// assert
 		require.NoError(t, err)
-		assert.Equal(t, *res, id)
 	})
 
 	t.Run("fail", func(t *testing.T) {
@@ -50,7 +49,7 @@ func TestSqlxDb_Add(t *testing.T) {
 			WithArgs(id, "test_t", "test_d").
 			WillReturnError(errors.New(""))
 		// act
-		_, err := f.s.Add(context.Background(), &models.Task{
+		err := f.s.Add(context.Background(), &models.Task{
 			ID:          id,
 			Title:       "test_t",
 			Description: "test_d",

@@ -18,7 +18,7 @@ import (
 )
 
 type iTaskStorage interface {
-	Add(ctx context.Context, t *models.Task) (*uuid.UUID, error)
+	Add(ctx context.Context, t *models.Task) error
 	Delete(ctx context.Context, ID *uuid.UUID) error
 	List(ctx context.Context, limit, offset uint64) ([]*models.Task, error)
 	Update(ctx context.Context, t *models.Task) error
