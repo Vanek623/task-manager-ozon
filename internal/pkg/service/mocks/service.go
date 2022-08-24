@@ -9,7 +9,9 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
 	models "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+	models0 "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/models"
 )
 
 // MockiService is a mock of iService interface.
@@ -36,10 +38,10 @@ func (m *MockiService) EXPECT() *MockiServiceMockRecorder {
 }
 
 // AddTask mocks base method.
-func (m *MockiService) AddTask(ctx context.Context, data *models.AddTaskData) (uint64, error) {
+func (m *MockiService) AddTask(ctx context.Context, data *models.AddTaskData) (*uuid.UUID, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddTask", ctx, data)
-	ret0, _ := ret[0].(uint64)
+	ret0, _ := ret[0].(*uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -132,12 +134,11 @@ func (m *MockiStorage) EXPECT() *MockiStorageMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockiStorage) Add(ctx context.Context, data *models.AddTaskData) (uint64, error) {
+func (m *MockiStorage) Add(ctx context.Context, data *models0.AddTaskData) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", ctx, data)
-	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Add indicates an expected call of Add.

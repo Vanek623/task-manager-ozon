@@ -6,15 +6,14 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/google/uuid"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
 	serviceStorage "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
 
-	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
-
 	serviceApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api/service"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc/credentials/insecure"
@@ -23,7 +22,7 @@ import (
 )
 
 type iService interface {
-	AddTask(ctx context.Context, data *models.AddTaskData) (uint64, error)
+	AddTask(ctx context.Context, data *models.AddTaskData) (*uuid.UUID, error)
 	DeleteTask(ctx context.Context, data *models.DeleteTaskData) error
 	TasksList(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error)
 	UpdateTask(ctx context.Context, data *models.UpdateTaskData) error
@@ -43,7 +42,7 @@ func Run() error {
 	s := service.New(storage)
 
 	go RunREST(ctx)
-	go bot.Run(ctx, s)
+	//go bot.Run(ctx, s)
 
 	return RunGRPC(s)
 }

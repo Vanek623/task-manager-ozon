@@ -3,12 +3,13 @@ package service
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
 )
 
 type iService interface {
-	AddTask(ctx context.Context, data *models.AddTaskData) (uint64, error)
+	AddTask(ctx context.Context, data *models.AddTaskData) (*uuid.UUID, error)
 	DeleteTask(ctx context.Context, data *models.DeleteTaskData) error
 	TasksList(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error)
 	UpdateTask(ctx context.Context, data *models.UpdateTaskData) error
@@ -28,12 +29,12 @@ func NewAPI(s iService) pb.ServiceServer {
 func (i *implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateRequest) (*pb.TaskCreateResponse, error) {
 	data := models.NewAddTaskData(in.GetTitle(), in.GetDescription())
 
-	ID, err := i.s.AddTask(ctx, data)
+	id, err := i.s.AddTask(ctx, data)
 	if err != nil {
 		return nil, err
 	}
 
-	return &pb.TaskCreateResponse{ID: ID}, nil
+	return &pb.TaskCreateResponse{ID: uuidToBytes(id)}, nil
 }
 
 func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
@@ -47,7 +48,7 @@ func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (
 	result := make([]*pb.TaskListResponse_Task, 0, len(tasks))
 	for _, task := range tasks {
 		result = append(result, &pb.TaskListResponse_Task{
-			ID:    task.ID(),
+			ID:    uuidToBytes(task.ID()),
 			Title: task.Title(),
 		})
 	}
@@ -56,7 +57,12 @@ func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (
 }
 
 func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateRequest) (*pb.TaskUpdateResponse, error) {
-	data := models.NewUpdateTaskData(in.GetID(), in.GetTitle(), in.GetDescription())
+	id, err := uuid.FromBytes(in.GetID())
+	if err != nil {
+		return nil, err
+	}
+
+	data := models.NewUpdateTaskData(&id, in.GetTitle(), in.GetDescription())
 
 	if err := i.s.UpdateTask(ctx, data); err != nil {
 		return nil, err
@@ -66,7 +72,12 @@ func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateReques
 }
 
 func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteRequest) (*pb.TaskDeleteResponse, error) {
-	data := models.NewDeleteTaskData(in.GetID())
+	id, err := uuid.FromBytes(in.GetID())
+	if err != nil {
+		return nil, err
+	}
+
+	data := models.NewDeleteTaskData(&id)
 
 	if err := i.s.DeleteTask(ctx, data); err != nil {
 		return nil, err
@@ -76,7 +87,12 @@ func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteReques
 }
 
 func (i *implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*pb.TaskGetResponse, error) {
-	data := models.NewGetTaskData(in.GetID())
+	id, err := uuid.FromBytes(in.GetID())
+	if err != nil {
+		return nil, err
+	}
+
+	data := models.NewGetTaskData(&id)
 
 	task, err := i.s.GetTask(ctx, data)
 	if err != nil {
@@ -93,4 +109,11 @@ func (i *implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*p
 	}
 
 	return &result, nil
+}
+
+func uuidToBytes(ID *uuid.UUID) []byte {
+	bytes := make([]byte, 16)
+	copy(bytes, ID[0:])
+
+	return bytes
 }

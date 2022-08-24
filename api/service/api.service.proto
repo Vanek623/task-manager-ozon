@@ -67,7 +67,7 @@ message TaskCreateRequest {
   optional string description = 2;
 }
 message TaskCreateResponse {
-  uint64 ID = 1;
+  bytes ID = 1;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -87,7 +87,7 @@ message TaskListResponse {
 
   message Task {
     // Идентификатор задачи
-    uint64 ID = 1;
+    bytes ID = 1;
 
     //Заголовок задачи
     string title = 2;
@@ -100,7 +100,7 @@ message TaskListResponse {
 
 message TaskUpdateRequest {
   // Идентификатор задачи
-  uint64 ID = 1;
+  bytes ID = 1;
 
   //Заголовок задачи
   string title = 2;
@@ -116,7 +116,7 @@ message TaskUpdateResponse {}
 
 message TaskDeleteRequest {
   // Идентификатор задачи
-  uint64 ID = 1;
+  bytes ID = 1;
 }
 message TaskDeleteResponse {}
 
@@ -126,7 +126,7 @@ message TaskDeleteResponse {}
 
 message TaskGetRequest {
   // Идентификатор задачи
-  uint64  ID = 1;
+  bytes ID = 1;
 }
 message TaskGetResponse {
   // Заголовок задачи

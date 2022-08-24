@@ -3,16 +3,18 @@ package storage
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/storage"
 )
 
 type iTaskStorage interface {
-	Add(ctx context.Context, t *models.Task) (uint64, error)
-	Delete(ctx context.Context, ID uint64) error
+	Add(ctx context.Context, t *models.Task) error
+	Delete(ctx context.Context, ID *uuid.UUID) error
 	List(ctx context.Context, limit, offset uint64) ([]*models.Task, error)
 	Update(ctx context.Context, t *models.Task) error
-	Get(ctx context.Context, ID uint64) (*models.Task, error)
+	Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error)
 }
 
 type implementation struct {
@@ -31,12 +33,11 @@ func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*p
 		Description: in.GetDescription(),
 	}
 
-	id, err := i.s.Add(ctx, &task)
-	if err != nil {
+	if err := i.s.Add(ctx, &task); err != nil {
 		return nil, err
 	}
 
-	return &pb.TaskAddResponse{ID: id}, nil
+	return &pb.TaskAddResponse{}, nil
 }
 
 func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
@@ -48,7 +49,7 @@ func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (
 	result := make([]*pb.TaskListResponse_Task, len(tasks))
 	for i, t := range tasks {
 		result[i] = &pb.TaskListResponse_Task{
-			ID:    t.ID,
+			ID:    uuidToBytes(&t.ID),
 			Title: t.Title,
 		}
 	}
@@ -58,12 +59,17 @@ func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (
 
 func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateRequest) (*pb.TaskUpdateResponse, error) {
 	task := models.Task{
-		ID:          in.GetID(),
 		Title:       in.GetTitle(),
 		Description: in.GetDescription(),
 	}
 
-	if err := i.s.Update(ctx, &task); err != nil {
+	var err error
+	task.ID, err = uuid.FromBytes(in.GetID())
+	if err != nil {
+		return nil, err
+	}
+
+	if err = i.s.Update(ctx, &task); err != nil {
 		return nil, err
 	}
 
@@ -71,7 +77,12 @@ func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateReques
 }
 
 func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteRequest) (*pb.TaskDeleteResponse, error) {
-	if err := i.s.Delete(ctx, in.GetID()); err != nil {
+	id, err := uuid.FromBytes(in.GetID())
+	if err != nil {
+		return nil, err
+	}
+
+	if err := i.s.Delete(ctx, &id); err != nil {
 		return nil, err
 	}
 
@@ -79,7 +90,12 @@ func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteReques
 }
 
 func (i *implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*pb.TaskGetResponse, error) {
-	task, err := i.s.Get(ctx, in.ID)
+	id, err := uuid.FromBytes(in.GetID())
+	if err != nil {
+		return nil, err
+	}
+
+	task, err := i.s.Get(ctx, &id)
 	if err != nil {
 		return nil, err
 	}
@@ -95,4 +111,11 @@ func (i *implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*p
 	}
 
 	return res, nil
+}
+
+func uuidToBytes(ID *uuid.UUID) []byte {
+	bytes := make([]byte, 16)
+	copy(bytes, ID[0:])
+
+	return bytes
 }

@@ -1,5 +1,7 @@
 package models
 
+import "github.com/google/uuid"
+
 // AddTaskData структура запроса на добавление задачи
 type AddTaskData struct {
 	title, description string
@@ -25,12 +27,12 @@ func NewAddTaskData(title, description string) *AddTaskData {
 
 // UpdateTaskData структура запроса на обновление задачи
 type UpdateTaskData struct {
-	id                 uint64
+	id                 *uuid.UUID
 	title, description string
 }
 
 // ID ID задачи
-func (d *UpdateTaskData) ID() uint64 {
+func (d *UpdateTaskData) ID() *uuid.UUID {
 	return d.id
 }
 
@@ -45,7 +47,7 @@ func (d *UpdateTaskData) Description() string {
 }
 
 // NewUpdateTaskData создание запроса на обновление
-func NewUpdateTaskData(ID uint64, title string, description string) *UpdateTaskData {
+func NewUpdateTaskData(ID *uuid.UUID, title string, description string) *UpdateTaskData {
 	return &UpdateTaskData{
 		id:          ID,
 		title:       title,
@@ -79,16 +81,16 @@ func NewListTaskData(limit uint64, offset uint64) *ListTaskData {
 
 // DeleteTaskData структура запроса на удаления задачи
 type DeleteTaskData struct {
-	id uint64
+	id *uuid.UUID
 }
 
 // ID ID задачи
-func (d *DeleteTaskData) ID() uint64 {
+func (d *DeleteTaskData) ID() *uuid.UUID {
 	return d.id
 }
 
 // NewDeleteTaskData новый запрос на удаление
-func NewDeleteTaskData(ID uint64) *DeleteTaskData {
+func NewDeleteTaskData(ID *uuid.UUID) *DeleteTaskData {
 	return &DeleteTaskData{
 		id: ID,
 	}
@@ -96,16 +98,16 @@ func NewDeleteTaskData(ID uint64) *DeleteTaskData {
 
 // GetTaskData структура запроса на получение описания задачи
 type GetTaskData struct {
-	id uint64
+	id *uuid.UUID
 }
 
 // ID ID задачи
-func (d *GetTaskData) ID() uint64 {
+func (d *GetTaskData) ID() *uuid.UUID {
 	return d.id
 }
 
 // NewGetTaskData новый запрос на чтение задачи
-func NewGetTaskData(ID uint64) *GetTaskData {
+func NewGetTaskData(ID *uuid.UUID) *GetTaskData {
 	return &GetTaskData{
 		id: ID,
 	}

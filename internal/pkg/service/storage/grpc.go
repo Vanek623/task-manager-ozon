@@ -5,7 +5,9 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+	storageModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/models"
 
 	"github.com/pkg/errors"
 
@@ -23,23 +25,27 @@ type grpc struct {
 	client pb.StorageClient
 }
 
-func (s *grpc) Add(ctx context.Context, data *models.AddTaskData) (uint64, error) {
-	request := &pb.TaskAddRequest{Title: data.Title()}
+func (s *grpc) Add(ctx context.Context, data *storageModelsPkg.AddTaskData) error {
+	id := data.ID()
+	request := &pb.TaskAddRequest{
+		ID:    uuidToBytes(&id),
+		Title: data.Title(),
+	}
 
 	if tmp := data.Description(); tmp != "" {
 		request.Description = &tmp
 	}
 
-	resp, err := s.client.TaskAdd(ctx, request)
+	_, err := s.client.TaskAdd(ctx, request)
 	if err != nil {
-		return 0, err
+		return err
 	}
 
-	return resp.GetID(), nil
+	return nil
 }
 
 func (s *grpc) Delete(ctx context.Context, data *models.DeleteTaskData) error {
-	_, err := s.client.TaskDelete(ctx, &pb.TaskDeleteRequest{ID: data.ID()})
+	_, err := s.client.TaskDelete(ctx, &pb.TaskDeleteRequest{ID: uuidToBytes(data.ID())})
 
 	return err
 }
@@ -56,7 +62,11 @@ func (s *grpc) List(ctx context.Context, data *models.ListTaskData) ([]*models.T
 
 	res := make([]*models.Task, len(resp.GetTasks()))
 	for i, task := range resp.GetTasks() {
-		res[i] = models.NewTask(task.GetID(), task.GetTitle())
+		id, err := uuid.FromBytes(task.GetID())
+		if err != nil {
+			return nil, err
+		}
+		res[i] = models.NewTask(&id, task.GetTitle())
 	}
 
 	return res, nil
@@ -64,7 +74,7 @@ func (s *grpc) List(ctx context.Context, data *models.ListTaskData) ([]*models.T
 
 func (s *grpc) Update(ctx context.Context, data *models.UpdateTaskData) error {
 	request := &pb.TaskUpdateRequest{
-		ID:    data.ID(),
+		ID:    uuidToBytes(data.ID()),
 		Title: data.Title(),
 	}
 
@@ -81,7 +91,7 @@ func (s *grpc) Update(ctx context.Context, data *models.UpdateTaskData) error {
 }
 
 func (s *grpc) Get(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error) {
-	resp, err := s.client.TaskGet(ctx, &pb.TaskGetRequest{ID: data.ID()})
+	resp, err := s.client.TaskGet(ctx, &pb.TaskGetRequest{ID: uuidToBytes(data.ID())})
 	if err != nil {
 		return nil, err
 	}
@@ -106,4 +116,11 @@ func newGRPC(address string) (*grpc, error) {
 	return &grpc{
 		client: pb.NewStorageClient(con),
 	}, nil
+}
+
+func uuidToBytes(ID *uuid.UUID) []byte {
+	bytes := make([]byte, 16)
+	copy(bytes, ID[0:])
+
+	return bytes
 }

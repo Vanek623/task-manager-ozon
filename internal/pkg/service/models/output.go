@@ -3,16 +3,18 @@ package models
 import (
 	"fmt"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // Task краткая информация о задаче
 type Task struct {
-	id    uint64
+	id    *uuid.UUID
 	title string
 }
 
 // ID ID задачи
-func (t *Task) ID() uint64 {
+func (t *Task) ID() *uuid.UUID {
 	return t.id
 }
 
@@ -22,7 +24,7 @@ func (t *Task) Title() string {
 }
 
 // NewTask создание краткого описания задачи
-func NewTask(ID uint64, title string) *Task {
+func NewTask(ID *uuid.UUID, title string) *Task {
 	return &Task{
 		id:    ID,
 		title: title,

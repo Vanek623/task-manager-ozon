@@ -22,7 +22,7 @@
       "properties": {
         "ID": {
           "type": "string",
-          "format": "uint64"
+          "format": "byte"
         },
         "title": {
           "type": "string"
@@ -57,13 +57,7 @@
       }
     },
     "storageTaskAddResponse": {
-      "type": "object",
-      "properties": {
-        "ID": {
-          "type": "string",
-          "format": "uint64"
-        }
-      }
+      "type": "object"
     },
     "storageTaskDeleteResponse": {
       "type": "object"

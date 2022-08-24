@@ -42,7 +42,7 @@
             "in": "query",
             "required": false,
             "type": "string",
-            "format": "uint64"
+            "format": "byte"
           }
         ],
         "tags": [
@@ -195,7 +195,7 @@
       "properties": {
         "ID": {
           "type": "string",
-          "format": "uint64",
+          "format": "byte",
           "title": "Идентификатор задачи"
         },
         "title": {
@@ -247,7 +247,7 @@
       "properties": {
         "ID": {
           "type": "string",
-          "format": "uint64"
+          "format": "byte"
         }
       }
     },
@@ -256,7 +256,7 @@
       "properties": {
         "ID": {
           "type": "string",
-          "format": "uint64",
+          "format": "byte",
           "title": "Идентификатор задачи"
         }
       }
@@ -299,7 +299,7 @@
       "properties": {
         "ID": {
           "type": "string",
-          "format": "uint64",
+          "format": "byte",
           "title": "Идентификатор задачи"
         },
         "title": {

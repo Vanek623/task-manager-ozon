@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 )
 
@@ -32,4 +33,3 @@ func (k *kafka) Get(ctx context.Context, data *models.GetTaskData) (*models.Deta
 	//TODO implement me
 	panic("implement me")
 }
-

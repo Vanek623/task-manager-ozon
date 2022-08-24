@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+	storageModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/models"
 )
 
 type iStorage interface {
-	Add(ctx context.Context, data *models.AddTaskData) (uint64, error)
+	Add(ctx context.Context, data *storageModelsPkg.AddTaskData) error
 	Delete(ctx context.Context, data *models.DeleteTaskData) error
 	List(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error)
 	Update(ctx context.Context, data *models.UpdateTaskData) error
