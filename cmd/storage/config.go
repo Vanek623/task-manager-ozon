@@ -32,7 +32,7 @@ func init() {
 	configDB.Host = "localhost"
 	configDB.Port = "5432"
 	configDB.Name = "task_manager_db"
-	configDB.UserName = configDB.Name
+	configDB.UserName = "user"
 	configDB.Password = os.Getenv("DB_PASSWORD")
 }
 

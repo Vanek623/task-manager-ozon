@@ -33,6 +33,12 @@ func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*p
 		Description: in.GetDescription(),
 	}
 
+	var err error
+	task.ID, err = uuid.FromBytes(in.GetID())
+	if err != nil {
+		return nil, err
+	}
+
 	if err := i.s.Add(ctx, &task); err != nil {
 		return nil, err
 	}

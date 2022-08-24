@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/http"
 
+	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
+
 	"github.com/google/uuid"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
@@ -42,7 +44,7 @@ func Run() error {
 	s := service.New(storage)
 
 	go RunREST(ctx)
-	//go bot.Run(ctx, s)
+	go bot.Run(ctx, s)
 
 	return RunGRPC(s)
 }

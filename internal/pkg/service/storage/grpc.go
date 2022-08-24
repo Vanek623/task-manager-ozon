@@ -120,7 +120,7 @@ func newGRPC(address string) (*grpc, error) {
 
 func uuidToBytes(ID *uuid.UUID) []byte {
 	bytes := make([]byte, 16)
-	copy(bytes, ID[0:])
+	copy(bytes, ID[:])
 
 	return bytes
 }
