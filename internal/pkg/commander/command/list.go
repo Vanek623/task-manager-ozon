@@ -45,9 +45,11 @@ func (c *listCommand) Execute(ctx context.Context, args string) string {
 		return "There are no tasks!"
 	}
 
+	enumerator.Update(tasks)
+
 	out := make([]string, 0, len(tasks))
-	for _, t := range tasks {
-		out = append(out, fmt.Sprintf("%s. %s", t.ID(), t.Title()))
+	for i, t := range tasks {
+		out = append(out, fmt.Sprintf("%d. %s", i+1, t.Title()))
 	}
 
 	return strings.Join(out, "\n")

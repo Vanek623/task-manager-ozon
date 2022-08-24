@@ -29,6 +29,8 @@ type iService interface {
 	GetTask(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error)
 }
 
+var enumerator taskEnumerator
+
 type command struct {
 	name        string
 	description string
