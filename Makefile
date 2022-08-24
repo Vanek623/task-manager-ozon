@@ -13,8 +13,7 @@ run-in-docker: build
 build:
 	go mod download && CGO_ENABLED=0 \
 	go build -o ./bin/server ./cmd/server/main && \
-	go build -o ./bin/storage ./cmd/storage/main && \
-	go build -o ./bin/client ./cmd/client/main
+	go build -o ./bin/storage ./cmd/storage/main
 
 # precommit jobs
 .PHONY: precommit
