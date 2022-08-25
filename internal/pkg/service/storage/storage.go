@@ -28,3 +28,14 @@ func NewGRPC(address string) (*Storage, error) {
 	}
 	return &Storage{s}, nil
 }
+
+// NewKafka Хранилище на основе очереди для операций добавления, изменения, удаления
+// и синхронного хранилища для операций чтения
+func NewKafka(ctx context.Context, brokers []string, syncStorage iStorage) (*Storage, error) {
+	s, err := newKafka(ctx, brokers, syncStorage)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Storage{s}, nil
+}

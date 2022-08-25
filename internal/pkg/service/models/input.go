@@ -1,6 +1,10 @@
 package models
 
-import "github.com/google/uuid"
+import (
+	"encoding/json"
+
+	"github.com/google/uuid"
+)
 
 // AddTaskData структура запроса на добавление задачи
 type AddTaskData struct {
@@ -55,6 +59,25 @@ func NewUpdateTaskData(ID *uuid.UUID, title string, description string) *UpdateT
 	}
 }
 
+// MarshalJSON создать json из структуры
+func (d *UpdateTaskData) MarshalJSON() ([]byte, error) {
+	j, err := json.Marshal(struct {
+		ID          *uuid.UUID
+		Title       string
+		Description string
+	}{
+		ID:          d.id,
+		Title:       d.title,
+		Description: d.description,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return j, nil
+}
+
 // ListTaskData структура запроса на получение списка задач
 type ListTaskData struct {
 	limit  uint64
@@ -94,6 +117,21 @@ func NewDeleteTaskData(ID *uuid.UUID) *DeleteTaskData {
 	return &DeleteTaskData{
 		id: ID,
 	}
+}
+
+// MarshalJSON создать json из структуры
+func (d *DeleteTaskData) MarshalJSON() ([]byte, error) {
+	j, err := json.Marshal(struct {
+		ID *uuid.UUID
+	}{
+		ID: d.id,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return j, nil
 }
 
 // GetTaskData структура запроса на получение описания задачи

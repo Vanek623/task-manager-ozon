@@ -16,3 +16,7 @@ const (
 
 	swaggerDir = "/home/ivan/GolandProjects/TaskBot/swagger"
 )
+
+var (
+	brokers = []string{"localhost:9095"}
+)

@@ -31,17 +31,22 @@ type iService interface {
 	GetTask(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error)
 }
 
-// Run запуск GRPC, REST and Tg Bot
+// Run запуск Kafka&GRPC, REST and Tg Bot
 func Run() error {
 	ctx, cl := context.WithCancel(context.Background())
 	defer cl()
 
-	storage, err := serviceStorage.NewGRPC(storageAddress)
+	syncStorage, err := serviceStorage.NewGRPC(storageAddress)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
-	s := service.New(storage)
+	asyncStorage, err := serviceStorage.NewKafka(ctx, brokers, syncStorage)
+	if err != nil {
+		return err
+	}
+
+	s := service.New(asyncStorage)
 
 	go RunREST(ctx)
 	go bot.Run(ctx, s)
