@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	storageApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/external/api"
 	"log"
 	"net"
 
@@ -10,7 +11,6 @@ import (
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/pkg/errors"
-	storageApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api/storage"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/storage"
 	"google.golang.org/grpc"
 )

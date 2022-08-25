@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	serviceApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api"
 	"log"
 	"net"
 	"net/http"
@@ -14,8 +15,6 @@ import (
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
 	serviceStorage "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
-
-	serviceApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api/service"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc/credentials/insecure"
