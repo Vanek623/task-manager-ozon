@@ -9,22 +9,9 @@ import (
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/storage"
 )
 
-type iTaskStorage interface {
-	Add(ctx context.Context, t *models.Task) error
-	Delete(ctx context.Context, ID *uuid.UUID) error
-	List(ctx context.Context, limit, offset uint64) ([]*models.Task, error)
-	Update(ctx context.Context, t *models.Task) error
-	Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error)
-}
-
 type implementation struct {
 	pb.UnimplementedStorageServer
 	s iTaskStorage
-}
-
-// NewAPI создание обработчика хранилища
-func NewAPI(s iTaskStorage) pb.StorageServer {
-	return &implementation{s: s}
 }
 
 func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*pb.TaskAddResponse, error) {

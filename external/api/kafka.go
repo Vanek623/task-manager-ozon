@@ -3,11 +3,11 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"log"
+
 	"github.com/Shopify/sarama"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"log"
-	"time"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 )
@@ -18,47 +18,22 @@ const (
 	topicUpdateRequestName = "income_update_request"
 )
 
-type iTaskStorage interface {
-	Add(ctx context.Context, t *models.Task) error
-	Delete(ctx context.Context, ID *uuid.UUID) error
-	List(ctx context.Context, limit, offset uint64) ([]*models.Task, error)
-	Update(ctx context.Context, t *models.Task) error
-	Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error)
-}
-
-type kafkaConsumer struct {
-	client  sarama.ConsumerGroup
+type kafka struct {
 	storage iTaskStorage
 }
 
-func newKafka(brokers []string, group string) (*kafkaConsumer, error) {
-	cfg := sarama.NewConfig()
-	client, err := sarama.NewConsumerGroup(brokers, group, cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return &kafkaConsumer{client: client}, nil
-}
-
-func (k *kafkaConsumer) Consume(ctx context.Context, topics []string) {
-	for {
-		if err := k.client.Consume(ctx, topics, k); err != nil {
-			log.Printf("on consume: %v", err)
-			time.Sleep(time.Second * 5)
-		}
-	}
-}
-
-func (k *kafkaConsumer) Setup(session sarama.ConsumerGroupSession) error {
+// Setup старт сессии
+func (k *kafka) Setup(_ sarama.ConsumerGroupSession) error {
 	return nil
 }
 
-func (k *kafkaConsumer) Cleanup(session sarama.ConsumerGroupSession) error {
+// Cleanup конец сессии
+func (k *kafka) Cleanup(_ sarama.ConsumerGroupSession) error {
 	return nil
 }
 
-func (k *kafkaConsumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+// ConsumeClaim запуск цикла чтения
+func (k *kafka) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for {
 		select {
 		case <-session.Context().Done():
@@ -79,20 +54,20 @@ func (k *kafkaConsumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim 
 	}
 }
 
-func (k *kafkaConsumer) handleMessage(ctx context.Context, msg *sarama.ConsumerMessage) error {
+func (k *kafka) handleMessage(ctx context.Context, msg *sarama.ConsumerMessage) error {
 	switch msg.Topic {
 	case topicAddRequestName:
-		return k.AddTask(ctx, msg.Value)
+		return k.addTask(ctx, msg.Value)
 	case topicDeleteRequestName:
-		return k.DeleteTask(ctx, msg.Value)
+		return k.deleteTask(ctx, msg.Value)
 	case topicUpdateRequestName:
-		return k.UpdateTask(ctx, msg.Value)
+		return k.updateTask(ctx, msg.Value)
 	default:
 		return errors.Errorf("unknown topic - %s", msg.Topic)
 	}
 }
 
-func (k *kafkaConsumer) AddTask(ctx context.Context, data []byte) error {
+func (k *kafka) addTask(ctx context.Context, data []byte) error {
 	obj := struct {
 		ID          uuid.UUID
 		Title       string
@@ -113,7 +88,7 @@ func (k *kafkaConsumer) AddTask(ctx context.Context, data []byte) error {
 	return err
 }
 
-func (k *kafkaConsumer) DeleteTask(ctx context.Context, data []byte) error {
+func (k *kafka) deleteTask(ctx context.Context, data []byte) error {
 	obj := struct {
 		ID uuid.UUID
 	}{}
@@ -128,7 +103,7 @@ func (k *kafkaConsumer) DeleteTask(ctx context.Context, data []byte) error {
 	return err
 }
 
-func (k *kafkaConsumer) UpdateTask(ctx context.Context, data []byte) error {
+func (k *kafka) updateTask(ctx context.Context, data []byte) error {
 	obj := struct {
 		ID          uuid.UUID
 		Title       string

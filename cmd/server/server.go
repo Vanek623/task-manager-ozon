@@ -2,10 +2,11 @@ package server
 
 import (
 	"context"
-	serviceApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api"
 	"log"
 	"net"
 	"net/http"
+
+	serviceApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
 
