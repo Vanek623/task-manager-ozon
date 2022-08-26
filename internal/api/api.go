@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
 )
@@ -18,30 +19,48 @@ type iService interface {
 
 type implementation struct {
 	pb.UnimplementedServiceServer
-	s iService
+	s  iService
+	cs *counters.Counters
 }
+
+const protobufGroupName = "protobufAPI"
 
 //NewAPI создание обработчика сервиса
 func NewAPI(s iService) pb.ServiceServer {
-	return &implementation{s: s}
+	return &implementation{
+		s:  s,
+		cs: counters.New(protobufGroupName),
+	}
 }
 
 func (i *implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateRequest) (*pb.TaskCreateResponse, error) {
+	i.cs.Inc(counters.Incoming)
+
 	data := models.NewAddTaskData(in.GetTitle(), in.GetDescription())
 
 	id, err := i.s.AddTask(ctx, data)
+	i.cs.Inc(counters.Outbound)
+
 	if err != nil {
+		i.cs.Inc(counters.Fail)
 		return nil, err
 	}
+
+	i.cs.Inc(counters.Success)
 
 	return &pb.TaskCreateResponse{ID: uuidToBytes(id)}, nil
 }
 
 func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
+	i.cs.Inc(counters.Incoming)
+
 	data := models.NewListTaskData(in.GetLimit(), in.GetOffset())
 
 	tasks, err := i.s.TasksList(ctx, data)
+	i.cs.Inc(counters.Outbound)
+
 	if err != nil {
+		i.cs.Inc(counters.Fail)
 		return nil, err
 	}
 
@@ -53,18 +72,30 @@ func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (
 		})
 	}
 
+	i.cs.Inc(counters.Success)
 	return &pb.TaskListResponse{Tasks: result}, nil
 }
 
 func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateRequest) (*pb.TaskUpdateResponse, error) {
+	i.cs.Inc(counters.Incoming)
+
 	id, err := uuid.FromBytes(in.GetID())
+	defer func() {
+		if err != nil {
+			i.cs.Inc(counters.Fail)
+		} else {
+			i.cs.Inc(counters.Success)
+		}
+	}()
 	if err != nil {
 		return nil, err
 	}
 
 	data := models.NewUpdateTaskData(&id, in.GetTitle(), in.GetDescription())
 
-	if err := i.s.UpdateTask(ctx, data); err != nil {
+	err = i.s.UpdateTask(ctx, data)
+	i.cs.Inc(counters.Outbound)
+	if err != nil {
 		return nil, err
 	}
 
@@ -72,14 +103,25 @@ func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateReques
 }
 
 func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteRequest) (*pb.TaskDeleteResponse, error) {
+	i.cs.Inc(counters.Incoming)
+
 	id, err := uuid.FromBytes(in.GetID())
+	defer func() {
+		if err != nil {
+			i.cs.Inc(counters.Fail)
+		} else {
+			i.cs.Inc(counters.Success)
+		}
+	}()
 	if err != nil {
 		return nil, err
 	}
 
 	data := models.NewDeleteTaskData(&id)
 
-	if err := i.s.DeleteTask(ctx, data); err != nil {
+	err = i.s.DeleteTask(ctx, data)
+	i.cs.Inc(counters.Outbound)
+	if err != nil {
 		return nil, err
 	}
 
@@ -87,15 +129,20 @@ func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteReques
 }
 
 func (i *implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*pb.TaskGetResponse, error) {
+	i.cs.Inc(counters.Incoming)
+
 	id, err := uuid.FromBytes(in.GetID())
 	if err != nil {
+		i.cs.Inc(counters.Fail)
 		return nil, err
 	}
 
 	data := models.NewGetTaskData(&id)
 
 	task, err := i.s.GetTask(ctx, data)
+	i.cs.Inc(counters.Outbound)
 	if err != nil {
+		i.cs.Inc(counters.Fail)
 		return nil, err
 	}
 
@@ -108,6 +155,7 @@ func (i *implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*p
 		result.Description = &tmp
 	}
 
+	i.cs.Inc(counters.Success)
 	return &result, nil
 }
 
