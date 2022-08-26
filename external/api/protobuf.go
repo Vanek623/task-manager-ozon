@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 
+	log "github.com/sirupsen/logrus"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/storage"
 )
@@ -27,6 +28,11 @@ func newProtobuf(s iTaskStorage) *implementation {
 
 func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*pb.TaskAddResponse, error) {
 	i.cs.Inc(counters.Incoming)
+	log.WithFields(log.Fields{
+		"id":          in.GetID(),
+		"title":       in.GetTitle(),
+		"description": in.GetDescription(),
+	}).Info("Incoming add request")
 
 	task := models.Task{
 		Title:       in.GetTitle(),
@@ -36,6 +42,7 @@ func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*p
 	var err error
 	defer func() {
 		if err != nil {
+			log.Error(err)
 			i.cs.Inc(counters.Fail)
 		} else {
 			i.cs.Inc(counters.Success)
@@ -57,9 +64,15 @@ func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*p
 func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
 	i.cs.Inc(counters.Incoming)
 
+	log.WithFields(log.Fields{
+		"offset": in.GetOffset(),
+		"limit":  in.GetLimit(),
+	}).Info("Incoming list request")
+
 	tasks, err := i.s.List(ctx, in.GetLimit(), in.GetOffset())
 	if err != nil {
 		i.cs.Inc(counters.Fail)
+		log.Error(err)
 		return nil, err
 	}
 
@@ -77,6 +90,11 @@ func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (
 
 func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateRequest) (*pb.TaskUpdateResponse, error) {
 	i.cs.Inc(counters.Incoming)
+	log.WithFields(log.Fields{
+		"id":          in.GetID(),
+		"title":       in.GetTitle(),
+		"description": in.GetDescription(),
+	}).Info("Incoming update request")
 
 	task := models.Task{
 		Title:       in.GetTitle(),
@@ -86,6 +104,7 @@ func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateReques
 	var err error
 	defer func() {
 		if err != nil {
+			log.Error(err)
 			i.cs.Inc(counters.Fail)
 		} else {
 			i.cs.Inc(counters.Success)
@@ -106,10 +125,14 @@ func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateReques
 
 func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteRequest) (*pb.TaskDeleteResponse, error) {
 	i.cs.Inc(counters.Incoming)
+	log.WithFields(log.Fields{
+		"id": in.GetID(),
+	}).Info("Incoming delete request")
 
 	id, err := uuid.FromBytes(in.GetID())
 	defer func() {
 		if err != nil {
+			log.Error(err)
 			i.cs.Inc(counters.Fail)
 		} else {
 			i.cs.Inc(counters.Success)
@@ -129,15 +152,20 @@ func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteReques
 
 func (i *implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*pb.TaskGetResponse, error) {
 	i.cs.Inc(counters.Incoming)
+	log.WithFields(log.Fields{
+		"id": in.GetID(),
+	}).Info("Incoming get request")
 
 	id, err := uuid.FromBytes(in.GetID())
 	if err != nil {
+		log.Error(err)
 		i.cs.Inc(counters.Fail)
 		return nil, err
 	}
 
 	task, err := i.s.Get(ctx, &id)
 	if err != nil {
+		log.Error(err)
 		i.cs.Inc(counters.Fail)
 		return nil, err
 	}

@@ -3,7 +3,8 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"log"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/Shopify/sarama"
 	"github.com/google/uuid"
@@ -48,11 +49,11 @@ func (k *kafka) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.C
 	for {
 		select {
 		case <-session.Context().Done():
-			log.Print("Done")
+			log.Info("Session done")
 			return nil
 		case msg, ok := <-claim.Messages():
 			if !ok {
-				log.Print("Data channel closed")
+				log.Info("Data channel closed")
 				return nil
 			}
 
@@ -60,7 +61,7 @@ func (k *kafka) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.C
 
 			if err := k.handleMessage(session.Context(), msg); err != nil {
 				k.cs.Inc(counters.Fail)
-				log.Println(err)
+				log.Error(err)
 			} else {
 				k.cs.Inc(counters.Success)
 			}
