@@ -23,7 +23,7 @@ type implementation struct {
 	cs *counters.Counters
 }
 
-const protobufGroupName = "protobufAPI"
+const protobufGroupName = "API_PB"
 
 //NewAPI создание обработчика сервиса
 func NewAPI(s iService) pb.ServiceServer {
@@ -39,7 +39,6 @@ func (i *implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateReques
 	data := models.NewAddTaskData(in.GetTitle(), in.GetDescription())
 
 	id, err := i.s.AddTask(ctx, data)
-	i.cs.Inc(counters.Outbound)
 
 	if err != nil {
 		i.cs.Inc(counters.Fail)
@@ -57,7 +56,6 @@ func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (
 	data := models.NewListTaskData(in.GetLimit(), in.GetOffset())
 
 	tasks, err := i.s.TasksList(ctx, data)
-	i.cs.Inc(counters.Outbound)
 
 	if err != nil {
 		i.cs.Inc(counters.Fail)
@@ -94,7 +92,6 @@ func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateReques
 	data := models.NewUpdateTaskData(&id, in.GetTitle(), in.GetDescription())
 
 	err = i.s.UpdateTask(ctx, data)
-	i.cs.Inc(counters.Outbound)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +117,6 @@ func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteReques
 	data := models.NewDeleteTaskData(&id)
 
 	err = i.s.DeleteTask(ctx, data)
-	i.cs.Inc(counters.Outbound)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +136,6 @@ func (i *implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*p
 	data := models.NewGetTaskData(&id)
 
 	task, err := i.s.GetTask(ctx, data)
-	i.cs.Inc(counters.Outbound)
 	if err != nil {
 		i.cs.Inc(counters.Fail)
 		return nil, err

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	storageModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/models"
 
@@ -19,10 +20,12 @@ import (
 const (
 	reconnectMaxCount = 5
 	reconnectTimeout  = time.Second
+	grpcCountersName  = "storage_protobuf"
 )
 
 type grpc struct {
 	client pb.StorageClient
+	cs     *counters.Counters
 }
 
 func (s *grpc) Add(ctx context.Context, data *storageModelsPkg.AddTaskData) error {
@@ -36,6 +39,7 @@ func (s *grpc) Add(ctx context.Context, data *storageModelsPkg.AddTaskData) erro
 		request.Description = &tmp
 	}
 
+	s.cs.Inc(counters.Outbound)
 	_, err := s.client.TaskAdd(ctx, request)
 	if err != nil {
 		return err
@@ -45,12 +49,17 @@ func (s *grpc) Add(ctx context.Context, data *storageModelsPkg.AddTaskData) erro
 }
 
 func (s *grpc) Delete(ctx context.Context, data *models.DeleteTaskData) error {
+	s.cs.Inc(counters.Outbound)
 	_, err := s.client.TaskDelete(ctx, &pb.TaskDeleteRequest{ID: uuidToBytes(data.ID())})
+	if err != nil {
+		return err
+	}
 
-	return err
+	return nil
 }
 
 func (s *grpc) List(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error) {
+	s.cs.Inc(counters.Outbound)
 	resp, err := s.client.TaskList(ctx, &pb.TaskListRequest{
 		Limit:  data.Limit(),
 		Offset: data.Offset(),
@@ -82,6 +91,7 @@ func (s *grpc) Update(ctx context.Context, data *models.UpdateTaskData) error {
 		request.Description = &tmp
 	}
 
+	s.cs.Inc(counters.Outbound)
 	_, err := s.client.TaskUpdate(ctx, request)
 	if err != nil {
 		return err
@@ -91,6 +101,7 @@ func (s *grpc) Update(ctx context.Context, data *models.UpdateTaskData) error {
 }
 
 func (s *grpc) Get(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error) {
+	s.cs.Inc(counters.Outbound)
 	resp, err := s.client.TaskGet(ctx, &pb.TaskGetRequest{ID: uuidToBytes(data.ID())})
 	if err != nil {
 		return nil, err
@@ -115,6 +126,7 @@ func newGRPC(address string) (*grpc, error) {
 
 	return &grpc{
 		client: pb.NewStorageClient(con),
+		cs:     counters.New(grpcCountersName),
 	}, nil
 }
 

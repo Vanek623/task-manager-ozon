@@ -30,6 +30,7 @@ func newAddCommand(s iService) *addCommand {
 			name:        "add",
 			description: "add task",
 			subArgs:     "<name> <description>",
-			service:     s},
+			service:     s,
+		},
 	}
 }

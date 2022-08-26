@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/Shopify/sarama"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	storageModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/models"
 )
@@ -13,15 +14,18 @@ const (
 	topicAddRequestName    = "income_add_request"
 	topicDeleteRequestName = "income_delete_request"
 	topicUpdateRequestName = "income_update_request"
+
+	kafkaCountersName = "storage_kafka"
 )
 
 type kafka struct {
 	iStorage
 	producer sarama.SyncProducer
 	ctx      context.Context
+	cs       *counters.Counters
 }
 
-func newKafka(ctx context.Context, brokers []string, syncStorage iStorage) (*kafka, error) {
+func newKafka(ctx context.Context, brokers []string, syncStorage iStorage, cs *counters.Counters) (*kafka, error) {
 	cfg := sarama.NewConfig()
 	cfg.Producer.Return.Successes = true
 	producer, err := sarama.NewSyncProducer(brokers, cfg)
@@ -33,6 +37,7 @@ func newKafka(ctx context.Context, brokers []string, syncStorage iStorage) (*kaf
 		iStorage: syncStorage,
 		producer: producer,
 		ctx:      ctx,
+		cs:       counters.New(kafkaCountersName),
 	}
 
 	go k.closeWhenCtxDone()
@@ -41,6 +46,8 @@ func newKafka(ctx context.Context, brokers []string, syncStorage iStorage) (*kaf
 }
 
 func (k *kafka) send(ctx context.Context, obj []byte, topicName string) error {
+	k.cs.Inc(counters.Outbound)
+
 	ch := make(chan error)
 	go func() {
 		var err error
@@ -72,27 +79,36 @@ func (k *kafka) closeWhenCtxDone() {
 
 func (k *kafka) Add(ctx context.Context, data *storageModelsPkg.AddTaskData) error {
 	obj, err := data.MarshalJSON()
+
 	if err != nil {
 		return err
 	}
 
-	return k.send(ctx, obj, topicAddRequestName)
+	err = k.send(ctx, obj, topicAddRequestName)
+
+	return err
 }
 
 func (k *kafka) Delete(ctx context.Context, data *models.DeleteTaskData) error {
 	obj, err := data.MarshalJSON()
+
 	if err != nil {
 		return err
 	}
 
-	return k.send(ctx, obj, topicDeleteRequestName)
+	err = k.send(ctx, obj, topicDeleteRequestName)
+
+	return err
 }
 
 func (k *kafka) Update(ctx context.Context, data *models.UpdateTaskData) error {
 	obj, err := data.MarshalJSON()
+
 	if err != nil {
 		return err
 	}
 
-	return k.send(ctx, obj, topicUpdateRequestName)
+	err = k.send(ctx, obj, topicUpdateRequestName)
+
+	return err
 }

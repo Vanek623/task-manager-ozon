@@ -3,16 +3,15 @@ package commander
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/google/uuid"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/commander/command"
-
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/commander/command"
 )
 
 type iService interface {
@@ -27,7 +26,10 @@ type iService interface {
 type Commander struct {
 	bot     *tgbotapi.BotAPI
 	manager command.Manager
+	cs      *counters.Counters
 }
+
+const commanderGroupName = "tg_bot"
 
 // New инициализация бота
 func New(token string, s iService) (*Commander, error) {
@@ -36,10 +38,7 @@ func New(token string, s iService) (*Commander, error) {
 		return nil, err
 	}
 
-	//bot.Debug = true
-	log.Printf("Authorized on acconut %s", bot.Self.UserName)
-
-	cmdr := &Commander{bot, command.NewManager(s)}
+	cmdr := &Commander{bot, command.NewManager(s), counters.New(commanderGroupName)}
 
 	return cmdr, nil
 }
@@ -47,35 +46,32 @@ func New(token string, s iService) (*Commander, error) {
 const timeOutValue = 60
 
 // Run запуск бота
-func (cmdr *Commander) Run(ctx context.Context) error {
+func (cmdr *Commander) Run(ctx context.Context) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = timeOutValue
 	updates := cmdr.bot.GetUpdatesChan(u)
 
-	ch := make(chan error)
 	go func() {
 		for update := range updates {
 			if update.Message == nil {
 				continue
 			}
-
+			cmdr.cs.Inc(counters.Incoming)
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, cmdr.handleMessage(ctx, update.Message))
+			log.WithField("bot incoming message", msg.Text)
 
 			_, err := cmdr.bot.Send(msg)
 			if err != nil {
-				ch <- errors.Wrap(err, "send tg message")
+				log.Error(err)
+				cmdr.cs.Inc(counters.Fail)
+			} else {
+				cmdr.cs.Inc(counters.Success)
 			}
 		}
-
-		ch <- nil
 	}()
 
-	select {
-	case err := <-ch:
-		return err
-	case <-ctx.Done():
-		return nil
-	}
+	<-ctx.Done()
+	cmdr.bot.StopReceivingUpdates()
 }
 
 var startCommandName = "start"
