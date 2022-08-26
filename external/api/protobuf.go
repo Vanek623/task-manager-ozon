@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/storage"
@@ -11,22 +12,42 @@ import (
 
 type implementation struct {
 	pb.UnimplementedStorageServer
-	s iTaskStorage
+	s  iTaskStorage
+	cs *counters.Counters
+}
+
+const protobufGroupName = "protobufAPI"
+
+func newProtobuf(s iTaskStorage) *implementation {
+	return &implementation{
+		s:  s,
+		cs: counters.New(protobufGroupName),
+	}
 }
 
 func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*pb.TaskAddResponse, error) {
+	i.cs.Inc(counters.Incoming)
+
 	task := models.Task{
 		Title:       in.GetTitle(),
 		Description: in.GetDescription(),
 	}
 
 	var err error
+	defer func() {
+		if err != nil {
+			i.cs.Inc(counters.Fail)
+		} else {
+			i.cs.Inc(counters.Success)
+		}
+	}()
+
 	task.ID, err = uuid.FromBytes(in.GetID())
 	if err != nil {
 		return nil, err
 	}
 
-	if err := i.s.Add(ctx, &task); err != nil {
+	if err = i.s.Add(ctx, &task); err != nil {
 		return nil, err
 	}
 
@@ -34,8 +55,11 @@ func (i *implementation) TaskAdd(ctx context.Context, in *pb.TaskAddRequest) (*p
 }
 
 func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (*pb.TaskListResponse, error) {
+	i.cs.Inc(counters.Incoming)
+
 	tasks, err := i.s.List(ctx, in.GetLimit(), in.GetOffset())
 	if err != nil {
+		i.cs.Inc(counters.Fail)
 		return nil, err
 	}
 
@@ -47,16 +71,27 @@ func (i *implementation) TaskList(ctx context.Context, in *pb.TaskListRequest) (
 		}
 	}
 
+	i.cs.Inc(counters.Success)
 	return &pb.TaskListResponse{Tasks: result}, nil
 }
 
 func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateRequest) (*pb.TaskUpdateResponse, error) {
+	i.cs.Inc(counters.Incoming)
+
 	task := models.Task{
 		Title:       in.GetTitle(),
 		Description: in.GetDescription(),
 	}
 
 	var err error
+	defer func() {
+		if err != nil {
+			i.cs.Inc(counters.Fail)
+		} else {
+			i.cs.Inc(counters.Success)
+		}
+	}()
+
 	task.ID, err = uuid.FromBytes(in.GetID())
 	if err != nil {
 		return nil, err
@@ -70,12 +105,22 @@ func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateReques
 }
 
 func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteRequest) (*pb.TaskDeleteResponse, error) {
+	i.cs.Inc(counters.Incoming)
+
 	id, err := uuid.FromBytes(in.GetID())
+	defer func() {
+		if err != nil {
+			i.cs.Inc(counters.Fail)
+		} else {
+			i.cs.Inc(counters.Success)
+		}
+	}()
+
 	if err != nil {
 		return nil, err
 	}
 
-	if err := i.s.Delete(ctx, &id); err != nil {
+	if err = i.s.Delete(ctx, &id); err != nil {
 		return nil, err
 	}
 
@@ -83,13 +128,17 @@ func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteReques
 }
 
 func (i *implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*pb.TaskGetResponse, error) {
+	i.cs.Inc(counters.Incoming)
+
 	id, err := uuid.FromBytes(in.GetID())
 	if err != nil {
+		i.cs.Inc(counters.Fail)
 		return nil, err
 	}
 
 	task, err := i.s.Get(ctx, &id)
 	if err != nil {
+		i.cs.Inc(counters.Fail)
 		return nil, err
 	}
 
@@ -103,6 +152,7 @@ func (i *implementation) TaskGet(ctx context.Context, in *pb.TaskGetRequest) (*p
 		res.Description = &task.Description
 	}
 
+	i.cs.Inc(counters.Success)
 	return res, nil
 }
 

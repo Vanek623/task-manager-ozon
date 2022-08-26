@@ -8,6 +8,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 )
@@ -16,10 +17,20 @@ const (
 	topicAddRequestName    = "income_add_request"
 	topicDeleteRequestName = "income_delete_request"
 	topicUpdateRequestName = "income_update_request"
+
+	kafkaGroupName = "kafkaAPI"
 )
 
 type kafka struct {
 	storage iTaskStorage
+	cs      *counters.Counters
+}
+
+func newKafka(storage iTaskStorage) *kafka {
+	return &kafka{
+		storage: storage,
+		cs:      counters.New(kafkaGroupName),
+	}
 }
 
 // Setup старт сессии
@@ -45,8 +56,13 @@ func (k *kafka) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.C
 				return nil
 			}
 
+			k.cs.Inc(counters.Incoming)
+
 			if err := k.handleMessage(session.Context(), msg); err != nil {
+				k.cs.Inc(counters.Fail)
 				log.Println(err)
+			} else {
+				k.cs.Inc(counters.Success)
 			}
 
 			session.MarkMessage(msg, "")

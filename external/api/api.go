@@ -19,12 +19,10 @@ type iTaskStorage interface {
 
 // NewProtobufAPI создание обработчика синхронных запросов
 func NewProtobufAPI(s iTaskStorage) pb.StorageServer {
-	return &implementation{s: s}
+	return newProtobuf(s)
 }
 
 // NewKafkaAPI создание обработчика асинхронных запросов
 func NewKafkaAPI(s iTaskStorage) sarama.ConsumerGroupHandler {
-	return &kafka{
-		storage: s,
-	}
+	return newKafka(s)
 }
