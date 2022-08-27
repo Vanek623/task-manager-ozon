@@ -5,6 +5,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/jmoiron/sqlx"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 )
 
 type taskStorageFixture struct {
@@ -24,7 +25,7 @@ func setUp(t *testing.T) taskStorageFixture {
 	fixture.db = sqlx.NewDb(db, "sqlmock")
 
 	fixture.dbMock = mock
-	fixture.s = NewSqlx(fixture.db)
+	fixture.s = NewSqlx(fixture.db, counters.New("test"))
 
 	return fixture
 }

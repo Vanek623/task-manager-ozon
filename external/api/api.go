@@ -5,6 +5,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/google/uuid"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/storage"
 )
@@ -18,11 +19,11 @@ type iTaskStorage interface {
 }
 
 // NewProtobufAPI создание обработчика синхронных запросов
-func NewProtobufAPI(s iTaskStorage) pb.StorageServer {
-	return newProtobuf(s)
+func NewProtobufAPI(s iTaskStorage, cs *counters.Counters) pb.StorageServer {
+	return newProtobuf(s, cs)
 }
 
 // NewKafkaAPI создание обработчика асинхронных запросов
-func NewKafkaAPI(s iTaskStorage) sarama.ConsumerGroupHandler {
-	return newKafka(s)
+func NewKafkaAPI(s iTaskStorage, cs *counters.Counters) sarama.ConsumerGroupHandler {
+	return newKafka(s, cs)
 }

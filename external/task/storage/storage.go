@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 
 	"github.com/jmoiron/sqlx"
 
@@ -44,24 +45,16 @@ type Storage struct {
 }
 
 // NewLocal создание локального многопоточного хранилища
-func NewLocal(isThreadSafe bool) *Storage {
-	if isThreadSafe {
-		return &Storage{newThreadSafeStorage(newLocal(), maxWorkers, workerIdleTimeout)}
-	}
-
-	return &Storage{newLocal()}
+func NewLocal() *Storage {
+	return &Storage{newThreadSafeStorage(newLocal(), maxWorkers, workerIdleTimeout)}
 }
 
 // NewPostgres создание хранилища PostgreSQL
-func NewPostgres(pool *pgxpool.Pool, isThreadSafe bool) *Storage {
-	if isThreadSafe {
-		return &Storage{newThreadSafeStorage(&postgres{pool: pool}, maxWorkers, workerIdleTimeout)}
-	}
-
-	return &Storage{&postgres{pool: pool}}
+func NewPostgres(pool *pgxpool.Pool, cs *counters.Counters) *Storage {
+	return &Storage{newThreadSafeStorage(&postgres{pool: pool, cs: cs}, maxWorkers, workerIdleTimeout)}
 }
 
 // NewSqlx создание хранилища Sqlx
-func NewSqlx(db *sqlx.DB) *Storage {
-	return &Storage{newThreadSafeStorage(&sqlxDb{db: db}, maxWorkers, workerIdleTimeout)}
+func NewSqlx(db *sqlx.DB, cs *counters.Counters) *Storage {
+	return &Storage{newThreadSafeStorage(&sqlxDb{db: db, cs: cs}, maxWorkers, workerIdleTimeout)}
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/Shopify/sarama"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/storage/config"
 	storageApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/external/api"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 
 	storagePkg "gitlab.ozon.dev/Vanek623/task-manager-system/external/task/storage"
 
@@ -34,18 +35,19 @@ func Run(ctx context.Context) {
 		log.Println(err)
 	}
 
-	storage := storagePkg.NewPostgres(pool, true)
+	cs := counters.New("storage_service")
+	storage := storagePkg.NewPostgres(pool, cs)
 
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
-		RunGRPC(ctx, storage)
+		RunGRPC(ctx, storage, cs)
 		wg.Done()
 	}()
 
 	wg.Add(1)
 	go func() {
-		RunKafka(ctx, storage)
+		RunKafka(ctx, storage, cs)
 		wg.Done()
 	}()
 
@@ -53,7 +55,7 @@ func Run(ctx context.Context) {
 }
 
 // RunGRPC запуск GRPC
-func RunGRPC(ctx context.Context, s *storagePkg.Storage) {
+func RunGRPC(ctx context.Context, s *storagePkg.Storage, cs *counters.Counters) {
 	cfg := config.GetConfigGRPC()
 	listener, err := net.Listen(cfg.ConnectionType, cfg.Host)
 	if err != nil {
@@ -62,7 +64,7 @@ func RunGRPC(ctx context.Context, s *storagePkg.Storage) {
 
 	server := grpc.NewServer()
 
-	pb.RegisterStorageServer(server, storageApiPkg.NewProtobufAPI(s))
+	pb.RegisterStorageServer(server, storageApiPkg.NewProtobufAPI(s, cs))
 
 	ch := make(chan error)
 	go func() {
@@ -84,7 +86,7 @@ func RunGRPC(ctx context.Context, s *storagePkg.Storage) {
 }
 
 // RunKafka запуск Kafka
-func RunKafka(ctx context.Context, s *storagePkg.Storage) {
+func RunKafka(ctx context.Context, s *storagePkg.Storage, cs *counters.Counters) {
 	cfg := config.GetConfigKafka()
 
 	saramaCfg := sarama.NewConfig()
@@ -93,7 +95,7 @@ func RunKafka(ctx context.Context, s *storagePkg.Storage) {
 		log.Println(err)
 	}
 
-	handler := storageApiPkg.NewKafkaAPI(s)
+	handler := storageApiPkg.NewKafkaAPI(s, cs)
 
 	log.Printf("Kafka run, working with brokers %v and topics %v", cfg.Brokers, cfg.Topics)
 

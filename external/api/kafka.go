@@ -18,8 +18,6 @@ const (
 	topicAddRequestName    = "income_add_request"
 	topicDeleteRequestName = "income_delete_request"
 	topicUpdateRequestName = "income_update_request"
-
-	kafkaGroupName = "kafkaAPI"
 )
 
 type kafka struct {
@@ -27,10 +25,10 @@ type kafka struct {
 	cs      *counters.Counters
 }
 
-func newKafka(storage iTaskStorage) *kafka {
+func newKafka(storage iTaskStorage, cs *counters.Counters) *kafka {
 	return &kafka{
 		storage: storage,
-		cs:      counters.New(kafkaGroupName),
+		cs:      cs,
 	}
 }
 

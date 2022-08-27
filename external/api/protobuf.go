@@ -17,12 +17,10 @@ type implementation struct {
 	cs *counters.Counters
 }
 
-const protobufGroupName = "protobufAPI"
-
-func newProtobuf(s iTaskStorage) *implementation {
+func newProtobuf(s iTaskStorage, cs *counters.Counters) *implementation {
 	return &implementation{
 		s:  s,
-		cs: counters.New(protobufGroupName),
+		cs: cs,
 	}
 }
 

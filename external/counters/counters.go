@@ -5,58 +5,19 @@ import (
 	"fmt"
 )
 
+// CounterName название счетчика
 type CounterName int
 
 const (
+	// Success счетчик успешно обработанных входящих запросов
 	Success CounterName = iota
+	// Fail счетчик неудачно обработанных входящих запросов
 	Fail
+	// Incoming счетчик входящих запросов
 	Incoming
+	// Outbound счетчик исходящих запросов
 	Outbound
 )
-
-type Counters struct {
-	success  *expvar.Int
-	fail     *expvar.Int
-	incoming *expvar.Int
-	outbound *expvar.Int
-}
-
-func New(name string) *Counters {
-	return &Counters{
-		success:  expvar.NewInt(makeName(name, successName)),
-		fail:     expvar.NewInt(makeName(name, failName)),
-		incoming: expvar.NewInt(makeName(name, incomingName)),
-		outbound: expvar.NewInt(makeName(name, outboundName)),
-	}
-}
-
-func (c *Counters) Inc(counter CounterName) {
-	switch counter {
-	case Success:
-		c.success.Add(1)
-	case Fail:
-		c.fail.Add(1)
-	case Incoming:
-		c.incoming.Add(1)
-	case Outbound:
-		c.outbound.Add(1)
-	}
-}
-
-func (c *Counters) Value(counter CounterName) int64 {
-	switch counter {
-	case Success:
-		return c.success.Value()
-	case Fail:
-		return c.fail.Value()
-	case Incoming:
-		return c.incoming.Value()
-	case Outbound:
-		return c.outbound.Value()
-	}
-
-	return 0
-}
 
 const (
 	successName  = "success"
@@ -65,6 +26,47 @@ const (
 	outboundName = "outbound"
 )
 
+var initInfo map[CounterName]string
+
+func init() {
+	initInfo = make(map[CounterName]string)
+
+	initInfo[Success] = successName
+	initInfo[Fail] = failName
+	initInfo[Incoming] = incomingName
+	initInfo[Outbound] = outboundName
+}
+
+// Counters группа счетчиков
+type Counters struct {
+	cs []*expvar.Int
+}
+
+// New создание группы счетчиков
+func New(groupName string) *Counters {
+	cs := make([]*expvar.Int, 0, len(initInfo))
+
+	for _, v := range initInfo {
+		cs = append(cs, expvar.NewInt(makeName(groupName, v)))
+	}
+
+	return &Counters{
+		cs: cs,
+	}
+}
+
+// Inc увеличить выбранный счетчик
+func (c *Counters) Inc(counter CounterName) {
+	c.cs[counter].Add(1)
+}
+
+// Value прочитать значение счетчика
+func (c *Counters) Value(counter CounterName) int64 {
+	c.cs[counter].Value()
+
+	return 0
+}
+
 func makeName(group, name string) string {
-	return fmt.Sprintf("%s_%s", group, name)
+	return fmt.Sprintf("%s:%s", group, name)
 }
