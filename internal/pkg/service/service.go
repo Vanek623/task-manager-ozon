@@ -4,7 +4,8 @@ package service
 
 import (
 	"context"
-	"log"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -53,7 +54,7 @@ func (s *Service) AddTask(ctx context.Context, data *models.AddTaskData) (*uuid.
 	id := uuid.New()
 	sData := storageModelsPkg.NewAddTaskData(&id, data.Title(), data.Description())
 
-	log.Printf("Adding task %s", id)
+	log.Debugf("Adding task %s", id)
 
 	if err := s.storage.Add(ctx, sData); err != nil {
 		return nil, err

@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/counters"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	storageModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/models"
 )
@@ -21,8 +22,8 @@ type Storage struct {
 }
 
 // NewGRPC GRPC хранилище
-func NewGRPC(address string) (*Storage, error) {
-	s, err := newGRPC(address)
+func NewGRPC(ctx context.Context, address string, cs *counters.Counters) (*Storage, error) {
+	s, err := newGRPC(ctx, address, cs)
 	if err != nil {
 		return nil, err
 	}
@@ -31,8 +32,8 @@ func NewGRPC(address string) (*Storage, error) {
 
 // NewKafka Хранилище на основе очереди для операций добавления, изменения, удаления
 // и синхронного хранилища для операций чтения
-func NewKafka(ctx context.Context, brokers []string, syncStorage iStorage) (*Storage, error) {
-	s, err := newKafka(ctx, brokers, syncStorage)
+func NewKafka(ctx context.Context, brokers []string, syncStorage iStorage, cs *counters.Counters) (*Storage, error) {
+	s, err := newKafka(ctx, brokers, syncStorage, cs)
 	if err != nil {
 		return nil, err
 	}

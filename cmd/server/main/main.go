@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/joho/godotenv"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/server"

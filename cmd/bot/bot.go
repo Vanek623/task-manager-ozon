@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/google/uuid"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/counters"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
@@ -35,21 +36,19 @@ type iService interface {
 }
 
 // Run запускает тг бота
-func Run(ctx context.Context, s iService) {
+func Run(ctx context.Context, s iService, cs *counters.Counters) {
 	token := readToken()
 	if token == "" {
 		log.Println("Empty token!")
 		return
 	}
 
-	cmdr, err := commander.New(token, s)
+	cmdr, err := commander.New(token, s, cs)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
 	log.Println("bot run")
-	if err = cmdr.Run(ctx); err != nil {
-		log.Println(err)
-	}
+	cmdr.Run(ctx)
 }

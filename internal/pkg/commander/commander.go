@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/counters"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
@@ -29,16 +29,14 @@ type Commander struct {
 	cs      *counters.Counters
 }
 
-const commanderGroupName = "tg_bot"
-
 // New инициализация бота
-func New(token string, s iService) (*Commander, error) {
+func New(token string, s iService, cs *counters.Counters) (*Commander, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
 	}
 
-	cmdr := &Commander{bot, command.NewManager(s), counters.New(commanderGroupName)}
+	cmdr := &Commander{bot, command.NewManager(s), cs}
 
 	return cmdr, nil
 }

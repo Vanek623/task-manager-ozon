@@ -2,10 +2,10 @@ package storage
 
 import (
 	"context"
-	"log"
 
 	"github.com/Shopify/sarama"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
+	log "github.com/sirupsen/logrus"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/counters"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	storageModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/models"
 )
@@ -14,8 +14,6 @@ const (
 	topicAddRequestName    = "income_add_request"
 	topicDeleteRequestName = "income_delete_request"
 	topicUpdateRequestName = "income_update_request"
-
-	kafkaCountersName = "storage_kafka"
 )
 
 type kafka struct {
@@ -37,10 +35,18 @@ func newKafka(ctx context.Context, brokers []string, syncStorage iStorage, cs *c
 		iStorage: syncStorage,
 		producer: producer,
 		ctx:      ctx,
-		cs:       counters.New(kafkaCountersName),
+		cs:       cs,
 	}
 
-	go k.closeWhenCtxDone()
+	<-k.ctx.Done()
+
+	go func() {
+		if err := producer.Close(); err != nil {
+			log.Error(err)
+		} else {
+			log.Info("producer closed")
+		}
+	}()
 
 	return k, nil
 }
@@ -64,16 +70,6 @@ func (k *kafka) send(ctx context.Context, obj []byte, topicName string) error {
 		return err
 	case <-ctx.Done():
 		return ctx.Err()
-	}
-}
-
-func (k *kafka) closeWhenCtxDone() {
-	<-k.ctx.Done()
-
-	if err := k.producer.Close(); err != nil {
-		log.Println(err)
-	} else {
-		log.Println("producer closed")
 	}
 }
 
