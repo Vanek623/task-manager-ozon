@@ -50,26 +50,26 @@ func (cmdr *Commander) Run(ctx context.Context) {
 	updates := cmdr.bot.GetUpdatesChan(u)
 
 	go func() {
-		for update := range updates {
-			if update.Message == nil {
-				continue
-			}
-			cmdr.cs.Inc(counters.Incoming)
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, cmdr.handleMessage(ctx, update.Message))
-			log.WithField("bot incoming message", msg.Text)
-
-			_, err := cmdr.bot.Send(msg)
-			if err != nil {
-				log.Error(err)
-				cmdr.cs.Inc(counters.Fail)
-			} else {
-				cmdr.cs.Inc(counters.Success)
-			}
-		}
+		<-ctx.Done()
+		cmdr.bot.StopReceivingUpdates()
 	}()
 
-	<-ctx.Done()
-	cmdr.bot.StopReceivingUpdates()
+	for update := range updates {
+		if update.Message == nil {
+			continue
+		}
+		cmdr.cs.Inc(counters.Incoming)
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, cmdr.handleMessage(ctx, update.Message))
+		log.WithField("text", msg.Text).Info("Incoming message")
+
+		_, err := cmdr.bot.Send(msg)
+		if err != nil {
+			log.Error(err)
+			cmdr.cs.Inc(counters.Fail)
+		} else {
+			cmdr.cs.Inc(counters.Success)
+		}
+	}
 }
 
 var startCommandName = "start"

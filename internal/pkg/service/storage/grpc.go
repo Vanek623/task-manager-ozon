@@ -9,6 +9,8 @@ import (
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/counters"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	storageModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/tracer"
+	"go.opentelemetry.io/otel"
 
 	"github.com/pkg/errors"
 
@@ -44,6 +46,9 @@ func (s *grpc) Add(ctx context.Context, data *storageModelsPkg.AddTaskData) erro
 		"description": request.GetDescription(),
 	}).Info("Outbound add request")
 
+	_, span := otel.Tracer(tracer.Name).Start(ctx, tracer.MakeSpanName("Add GRPC"))
+	defer span.End()
+
 	s.cs.Inc(counters.Outbound)
 	_, err := s.client.TaskAdd(ctx, request)
 	if err != nil {
@@ -59,6 +64,9 @@ func (s *grpc) Delete(ctx context.Context, data *models.DeleteTaskData) error {
 	log.WithFields(log.Fields{
 		"id": request.GetID(),
 	}).Info("Outbound delete request")
+
+	_, span := otel.Tracer(tracer.Name).Start(ctx, tracer.MakeSpanName("Delete GRPC"))
+	defer span.End()
 
 	s.cs.Inc(counters.Outbound)
 	_, err := s.client.TaskDelete(ctx, request)

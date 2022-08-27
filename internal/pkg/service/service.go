@@ -5,10 +5,9 @@ package service
 import (
 	"context"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	storageModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/models"
 )

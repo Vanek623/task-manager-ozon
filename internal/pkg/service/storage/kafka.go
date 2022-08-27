@@ -8,6 +8,8 @@ import (
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/counters"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	storageModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/tracer"
+	"go.opentelemetry.io/otel"
 )
 
 const (
@@ -19,7 +21,6 @@ const (
 type kafka struct {
 	iStorage
 	producer sarama.SyncProducer
-	ctx      context.Context
 	cs       *counters.Counters
 }
 
@@ -31,24 +32,20 @@ func newKafka(ctx context.Context, brokers []string, syncStorage iStorage, cs *c
 		return nil, err
 	}
 
-	k := &kafka{
-		iStorage: syncStorage,
-		producer: producer,
-		ctx:      ctx,
-		cs:       cs,
-	}
-
-	<-k.ctx.Done()
-
 	go func() {
+		<-ctx.Done()
 		if err := producer.Close(); err != nil {
 			log.Error(err)
 		} else {
-			log.Info("producer closed")
+			log.Info("Producer closed")
 		}
 	}()
 
-	return k, nil
+	return &kafka{
+		iStorage: syncStorage,
+		producer: producer,
+		cs:       cs,
+	}, nil
 }
 
 func (k *kafka) send(ctx context.Context, obj []byte, topicName string) error {
@@ -80,6 +77,8 @@ func (k *kafka) Add(ctx context.Context, data *storageModelsPkg.AddTaskData) err
 		return err
 	}
 
+	_, span := otel.Tracer(tracer.Name).Start(ctx, tracer.MakeSpanName("Add Kafka"))
+	defer span.End()
 	err = k.send(ctx, obj, topicAddRequestName)
 
 	return err
@@ -92,6 +91,8 @@ func (k *kafka) Delete(ctx context.Context, data *models.DeleteTaskData) error {
 		return err
 	}
 
+	_, span := otel.Tracer(tracer.Name).Start(ctx, tracer.MakeSpanName("Add Kafka"))
+	defer span.End()
 	err = k.send(ctx, obj, topicDeleteRequestName)
 
 	return err

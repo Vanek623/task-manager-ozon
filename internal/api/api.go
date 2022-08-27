@@ -7,7 +7,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/counters"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/tracer"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
+	"go.opentelemetry.io/otel"
 )
 
 type iService interface {
@@ -34,6 +36,8 @@ func NewAPI(s iService, cs *counters.Counters) pb.ServiceServer {
 
 func (i *implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateRequest) (*pb.TaskCreateResponse, error) {
 	i.income()
+	newCtx, span := otel.Tracer(tracer.Name).Start(ctx, tracer.MakeSpanName("TaskCreate"))
+	defer span.End()
 
 	log.WithFields(log.Fields{
 		"title":       in.GetTitle(),
@@ -42,7 +46,7 @@ func (i *implementation) TaskCreate(ctx context.Context, in *pb.TaskCreateReques
 
 	data := models.NewAddTaskData(in.GetTitle(), in.GetDescription())
 
-	id, err := i.s.AddTask(ctx, data)
+	id, err := i.s.AddTask(newCtx, data)
 
 	if err != nil {
 		i.fail(err)
@@ -117,6 +121,9 @@ func (i *implementation) TaskUpdate(ctx context.Context, in *pb.TaskUpdateReques
 func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteRequest) (*pb.TaskDeleteResponse, error) {
 	i.income()
 
+	newCtx, span := otel.Tracer(tracer.Name).Start(ctx, tracer.MakeSpanName("TaskDelete"))
+	defer span.End()
+
 	log.WithFields(log.Fields{
 		"id": in.GetID(),
 	}).Info("Incoming delete request")
@@ -135,7 +142,7 @@ func (i *implementation) TaskDelete(ctx context.Context, in *pb.TaskDeleteReques
 
 	data := models.NewDeleteTaskData(&id)
 
-	err = i.s.DeleteTask(ctx, data)
+	err = i.s.DeleteTask(newCtx, data)
 	if err != nil {
 		return nil, err
 	}
