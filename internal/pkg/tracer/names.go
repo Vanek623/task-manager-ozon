@@ -6,6 +6,7 @@ const (
 	// ServiceName название сервиса
 	ServiceName = "Task manager"
 
+	// Name имя трейсера сервиса
 	Name = "Task manager tracer"
 )
 

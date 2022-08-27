@@ -7,12 +7,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
-
+	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
 	serviceApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/counters"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
 
 	"github.com/google/uuid"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
@@ -36,8 +35,8 @@ type iService interface {
 }
 
 // Run запуск Kafka&GRPC, REST and Tg Bot
-func Run() error {
-	ctx, cl := context.WithCancel(context.Background())
+func Run(ctx context.Context) error {
+	ctx, cl := context.WithCancel(ctx)
 	defer cl()
 
 	cs := counters.New("task_service")
@@ -46,10 +45,14 @@ func Run() error {
 		return err
 	}
 
+	log.WithField("host", storageAddress).Debug("Connected to storage over GRPC")
+
 	asyncStorage, err := serviceStorage.NewKafka(ctx, brokers, syncStorage, cs)
 	if err != nil {
 		return err
 	}
+
+	log.WithField("brokers", brokers).Debug("Connected to storage over Kafka")
 
 	s := service.New(asyncStorage)
 
@@ -78,9 +81,6 @@ func Run() error {
 
 // RunGRPC запускает GRPC
 func RunGRPC(ctx context.Context, service iService, cs *counters.Counters) {
-	ctx, cl := context.WithCancel(ctx)
-	defer cl()
-
 	listener, err := net.Listen(connectionType, addressGRPC)
 	if err != nil {
 		log.Error(err)
@@ -90,18 +90,25 @@ func RunGRPC(ctx context.Context, service iService, cs *counters.Counters) {
 	s := grpc.NewServer()
 	pb.RegisterServiceServer(s, serviceApiPkg.NewAPI(service, cs))
 
-	log.Printf("GRPC up with address %s", addressGRPC)
+	log.WithField("host", addressGRPC).Info("GRPC server up")
 
+	done := make(chan struct{})
 	go func() {
 		<-ctx.Done()
 
 		s.Stop()
-		log.Info("GRPC server down")
+		done <- struct{}{}
 	}()
 
 	if err = s.Serve(listener); err != nil {
-		log.Error(err)
+		if errors.Is(err, grpc.ErrServerStopped) {
+			log.Info(err)
+		} else {
+			log.Error(err)
+		}
 	}
+
+	<-done
 }
 
 // RunHTTP запускает REST и swagger
@@ -113,7 +120,7 @@ func RunHTTP(ctx context.Context) {
 		return
 	}
 
-	log.Infof("REST up with address %s", addressHTTP)
+	log.WithField("host", addressHTTP).Info("REST up")
 
 	mux := http.NewServeMux()
 	mux.Handle("/", gwmux)
@@ -121,23 +128,30 @@ func RunHTTP(ctx context.Context) {
 	fs := http.FileServer(http.Dir(swaggerDir))
 	mux.Handle("/swagger/", http.StripPrefix("/swagger/", fs))
 
-	log.Infof("Swagger up with address %s", addressHTTP)
+	log.WithField("host", addressHTTP).Info("Swagger up")
 
 	serv := http.Server{
 		Addr:              addressHTTP,
 		Handler:           mux,
 		ReadHeaderTimeout: time.Second,
 	}
+
+	done := make(chan struct{})
 	go func() {
 		<-ctx.Done()
 		if err := serv.Shutdown(context.Background()); err != nil {
 			log.Error(err)
-		} else {
-			log.Info("HTTP server down")
 		}
+		done <- struct{}{}
 	}()
 
 	if err := serv.ListenAndServe(); err != nil {
-		log.Error(err)
+		if errors.Is(err, http.ErrServerClosed) {
+			log.Info(err)
+		} else {
+			log.Error(err)
+		}
 	}
+
+	<-done
 }

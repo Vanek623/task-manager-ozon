@@ -3,10 +3,11 @@ package storage
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"sync"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/Shopify/sarama"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/storage/config"
@@ -32,7 +33,7 @@ func Run(ctx context.Context) {
 	}()
 
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	cs := counters.New("storage_service")
@@ -56,33 +57,28 @@ func Run(ctx context.Context) {
 
 // RunGRPC запуск GRPC
 func RunGRPC(ctx context.Context, s *storagePkg.Storage, cs *counters.Counters) {
+	ctx, cl := context.WithCancel(ctx)
+	defer cl()
+
 	cfg := config.GetConfigGRPC()
 	listener, err := net.Listen(cfg.ConnectionType, cfg.Host)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	server := grpc.NewServer()
 
 	pb.RegisterStorageServer(server, storageApiPkg.NewProtobufAPI(s, cs))
 
-	ch := make(chan error)
 	go func() {
-		err := server.Serve(listener)
-		ch <- err
+		<-ctx.Done()
+		server.Stop()
+		log.Info("Kafka down")
 	}()
 
-	select {
-	case err := <-ch:
-		if err != nil {
-			log.Println(err)
-		}
-		server.Stop()
-	case <-ctx.Done():
+	if err := server.Serve(listener); err != nil {
+		log.Error(err)
 	}
-
-	server.Stop()
-	log.Println("Kafka stop")
 }
 
 // RunKafka запуск Kafka
@@ -92,22 +88,29 @@ func RunKafka(ctx context.Context, s *storagePkg.Storage, cs *counters.Counters)
 	saramaCfg := sarama.NewConfig()
 	client, err := sarama.NewConsumerGroup(cfg.Brokers, cfg.Group, saramaCfg)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 
 	handler := storageApiPkg.NewKafkaAPI(s, cs)
 
-	log.Printf("Kafka run, working with brokers %v and topics %v", cfg.Brokers, cfg.Topics)
+	log.WithFields(log.Fields{
+		"brokers": cfg.Brokers,
+		"topics":  cfg.Topics,
+	}).Info("Kafka run")
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("Stop kafka")
+			log.Info("Stop kafka")
+			if err := client.Close(); err != nil {
+				log.Error(err)
+			}
+			return
 		default:
 		}
 
 		if err := client.Consume(ctx, cfg.Topics, handler); err != nil {
-			log.Printf("on consume: %v", err)
+			log.WithField("error", err).Error("Consuming")
 			time.Sleep(time.Second * 5)
 		}
 	}
@@ -134,7 +137,10 @@ func connectToDB(ctx context.Context) (*pgxpool.Pool, error) {
 	poolConfig.MinConns = cfg.MinConnections
 	poolConfig.MaxConns = cfg.MaxConnections
 
-	log.Printf("connected to storage with address %s:%s", cfg.Host, cfg.Port)
+	log.WithFields(log.Fields{
+		"host": cfg.Host,
+		"port": cfg.Port,
+	}).Info("Connected to storage")
 
 	return pool, nil
 }
