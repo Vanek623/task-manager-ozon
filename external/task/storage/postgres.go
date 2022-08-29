@@ -44,7 +44,7 @@ func (p *postgres) Delete(ctx context.Context, ID *uuid.UUID) error {
 }
 
 func (p *postgres) List(ctx context.Context, limit, offset uint64) ([]*models.Task, error) {
-	const query = "SELECT * FROM tasks ORDER BY id LIMIT $1 OFFSET $2"
+	const query = "SELECT * FROM tasks ORDER BY title LIMIT $1 OFFSET $2"
 
 	p.cs.Inc(counters.Outbound)
 	var tasks []*models.Task

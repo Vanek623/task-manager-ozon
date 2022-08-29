@@ -17,6 +17,10 @@ const (
 	Incoming
 	// Outbound счетчик исходящих запросов
 	Outbound
+	// CacheHit счетчик попадания кэша
+	CacheHit
+	// CacheMiss счетчик промаха кэша
+	CacheMiss
 )
 
 const (
@@ -24,6 +28,8 @@ const (
 	failName     = "fail"
 	incomingName = "incoming"
 	outboundName = "outbound"
+	cacheHit     = "cacheHit"
+	cacheMiss    = "cacheMiss"
 )
 
 var initInfo map[CounterName]string
@@ -35,6 +41,8 @@ func init() {
 	initInfo[Fail] = failName
 	initInfo[Incoming] = incomingName
 	initInfo[Outbound] = outboundName
+	initInfo[CacheHit] = cacheHit
+	initInfo[CacheMiss] = cacheMiss
 }
 
 // Counters группа счетчиков

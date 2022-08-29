@@ -82,3 +82,8 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./kafka_data/502:/kafka
+
+  memcached:
+    image: library/memcached
+    ports:
+      - "11211:11211"

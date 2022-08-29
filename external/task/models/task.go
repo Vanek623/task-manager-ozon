@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -18,4 +19,12 @@ type Task struct {
 
 func (t *Task) String() string {
 	return fmt.Sprintf("%d: %s", t.ID, t.Title)
+}
+
+func (t Task) MarshalBinary() ([]byte, error) {
+	return json.Marshal(t)
+}
+
+func (t *Task) UnmarshalBinary(data []byte) error {
+	return json.Unmarshal(data, t)
 }
