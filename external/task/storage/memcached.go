@@ -28,20 +28,11 @@ type memcached struct {
 }
 
 func (m *memcached) Add(ctx context.Context, t *models.Task) error {
-	err := m.storage.Add(ctx, t)
-	if err != nil {
+	if err := m.storage.Add(ctx, t); err != nil {
 		return err
 	}
 
-	encoded, err := t.MarshalBinary()
-	err = m.client.Add(&memcache.Item{
-		Key:        t.ID.String(),
-		Value:      encoded,
-		Flags:      0,
-		Expiration: expiration,
-	})
-
-	if err != nil {
+	if err := m.addToCache(t); err != nil {
 		log.Error(err)
 	}
 
@@ -79,18 +70,6 @@ func (m *memcached) Update(ctx context.Context, t *models.Task) error {
 	}
 
 	return nil
-}
-
-func newMemcached(host string, storage iTaskStorage) (*memcached, error) {
-	client := memcache.New(host)
-	if err := client.Ping(); err != nil {
-		return nil, err
-	}
-
-	return &memcached{
-		storage: storage,
-		client:  client,
-	}, nil
 }
 
 func (m *memcached) List(ctx context.Context, limit, offset uint64) ([]*models.Task, error) {
@@ -161,6 +140,18 @@ func (m *memcached) Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error
 	}
 
 	return t, nil
+}
+
+func newMemcached(host string, storage iTaskStorage) (*memcached, error) {
+	client := memcache.New(host)
+	if err := client.Ping(); err != nil {
+		return nil, err
+	}
+
+	return &memcached{
+		storage: storage,
+		client:  client,
+	}, nil
 }
 
 func (m *memcached) addToCache(t *models.Task) error {

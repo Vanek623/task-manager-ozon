@@ -58,3 +58,13 @@ func NewPostgres(pool *pgxpool.Pool, cs *counters.Counters) *Storage {
 func NewSqlx(db *sqlx.DB, cs *counters.Counters) *Storage {
 	return &Storage{newThreadSafeStorage(&sqlxDb{db: db, cs: cs}, maxWorkers, workerIdleTimeout)}
 }
+
+func NewMemcachedPostres(pool *pgxpool.Pool, cs *counters.Counters, memcachedHost string) (*Storage, error) {
+	p := &postgres{pool: pool, cs: cs}
+	mcP, err := newMemcached(memcachedHost, p)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Storage{newThreadSafeStorage(mcP, maxWorkers, workerIdleTimeout)}, nil
+}
