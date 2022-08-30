@@ -18,7 +18,7 @@ const (
 
 	listKey = "list"
 
-	listCachedCount = 10
+	listCachedCount uint64 = 10
 )
 
 type memcached struct {
@@ -58,7 +58,12 @@ func (m *memcached) Update(ctx context.Context, t *models.Task) error {
 		return err
 	}
 
-	encoded, err := t.MarshalBinary()
+	encoded, err := json.Marshal(t)
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
+
 	err = m.client.Set(&memcache.Item{
 		Key:        t.ID.String(),
 		Value:      encoded,
@@ -80,34 +85,63 @@ func (m *memcached) List(ctx context.Context, limit, offset uint64) ([]*models.T
 		return nil, err
 	}
 
-	canBeCached := listCachedCount-(offset+limit) >= 0
+	canBeCached := listCachedCount >= offset+limit
 
 	if err == nil && canBeCached {
-		m.cs.Inc(counters.CacheHit)
 		var tmp []*models.Task
-		if err = json.Unmarshal(item.Value, &tmp); err != nil {
-			return nil, err
+		if err = json.Unmarshal(item.Value, &tmp); err == nil {
+			for i := offset; i < offset+limit; i++ {
+				tasks = append(tasks, tmp[i])
+			}
+
+			m.cs.Inc(counters.CacheHit)
+
+			return tasks, nil
 		}
 
-		for i := offset; i < offset+limit; i++ {
-			tasks = append(tasks, tmp[i])
+		log.Error(err)
+
+		if err = m.client.Delete(item.Key); err != nil {
+			log.Error(err)
 		}
-	} else if err != nil && canBeCached {
+	}
+
+	if err != nil && canBeCached {
 		m.cs.Inc(counters.CacheMiss)
 
-		tmp, err := m.storage.List(ctx, 0, listCachedCount)
+		var tmp []*models.Task
+		tmp, err = m.storage.List(ctx, 0, listCachedCount)
 		if err != nil {
 			return nil, err
 		}
 
-		for i := offset; i < offset+limit; i++ {
+		for i := offset; i < offset+limit && i < uint64(len(tmp)); i++ {
 			tasks = append(tasks, tmp[i])
 		}
-	} else {
-		tasks, err = m.storage.List(ctx, limit, offset)
+
+		var data []byte
+		data, err = json.Marshal(tmp)
 		if err != nil {
-			return nil, err
+			log.Error(err)
+			return tasks, nil
 		}
+
+		err = m.client.Set(&memcache.Item{
+			Key:        listKey,
+			Value:      data,
+			Expiration: expiration,
+		})
+
+		if err != nil {
+			log.Error(err)
+		}
+
+		return tasks, nil
+	}
+
+	tasks, err = m.storage.List(ctx, limit, offset)
+	if err != nil {
+		return nil, err
 	}
 
 	return tasks, nil
@@ -124,7 +158,8 @@ func (m *memcached) Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error
 	if err == nil {
 		m.cs.Inc(counters.CacheHit)
 		t = &models.Task{}
-		if err = t.UnmarshalBinary(item.Value); err != nil {
+
+		if err = json.Unmarshal(item.Value, t); err != nil {
 			return nil, err
 		}
 	} else {
@@ -142,7 +177,7 @@ func (m *memcached) Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error
 	return t, nil
 }
 
-func newMemcached(host string, storage iTaskStorage) (*memcached, error) {
+func newMemcached(host string, storage iTaskStorage, cs *counters.Counters) (*memcached, error) {
 	client := memcache.New(host)
 	if err := client.Ping(); err != nil {
 		return nil, err
@@ -151,11 +186,12 @@ func newMemcached(host string, storage iTaskStorage) (*memcached, error) {
 	return &memcached{
 		storage: storage,
 		client:  client,
+		cs:      cs,
 	}, nil
 }
 
 func (m *memcached) addToCache(t *models.Task) error {
-	encoded, err := t.MarshalBinary()
+	encoded, err := json.Marshal(t)
 	if err != nil {
 		return err
 	}
@@ -167,14 +203,6 @@ func (m *memcached) addToCache(t *models.Task) error {
 	})
 
 	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *memcached) removeFromCache(ID *uuid.UUID) error {
-	if err := m.client.Delete(ID.String()); err != nil && !errors.Is(err, memcache.ErrCacheMiss) {
 		return err
 	}
 

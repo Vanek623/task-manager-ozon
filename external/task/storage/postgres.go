@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
@@ -51,6 +52,8 @@ func (p *postgres) List(ctx context.Context, limit, offset uint64) ([]*models.Ta
 	if err := pgxscan.Select(ctx, p.pool, &tasks, query, limit, offset); err != nil {
 		return nil, err
 	}
+
+	log.WithField("tasks", tasks).Debug("List request result")
 
 	return tasks, nil
 }

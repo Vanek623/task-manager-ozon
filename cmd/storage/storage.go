@@ -23,23 +23,18 @@ import (
 )
 
 // Run запуск сервиса хранилища
-func Run(ctx context.Context) {
+func Run(ctx context.Context) error {
 	ctx, cl := context.WithCancel(ctx)
 	defer cl()
 
-	pool, err := connectToDB(ctx)
-	defer func() {
-		pool.Close()
-	}()
-
-	if err != nil {
-		log.Error(err)
-	}
-
 	cs := counters.New("storage_service")
-	storage := storagePkg.NewPostgres(pool, cs)
 
 	var wg sync.WaitGroup
+	storage, err := RunDB(ctx, &wg, cs)
+	if err != nil {
+		return err
+	}
+
 	wg.Add(1)
 	go func() {
 		RunGRPC(ctx, storage, cs)
@@ -53,6 +48,8 @@ func Run(ctx context.Context) {
 	}()
 
 	wg.Wait()
+
+	return nil
 }
 
 // RunGRPC запуск GRPC
@@ -116,7 +113,7 @@ func RunKafka(ctx context.Context, s *storagePkg.Storage, cs *counters.Counters)
 	}
 }
 
-func connectToDB(ctx context.Context) (*pgxpool.Pool, error) {
+func connectToDB(ctx context.Context, wg *sync.WaitGroup) (*pgxpool.Pool, error) {
 	cfg := config.GetConfigDB()
 	psqlConn := fmt.Sprintf("host=%s port=%s user=%s password=%s "+
 		"dbname=%s sslmode=disable", cfg.Host, cfg.Port, cfg.UserName, cfg.Password, cfg.Name)
@@ -142,5 +139,28 @@ func connectToDB(ctx context.Context) (*pgxpool.Pool, error) {
 		"port": cfg.Port,
 	}).Info("Connected to storage")
 
+	wg.Add(1)
+	go func() {
+		<-ctx.Done()
+		pool.Close()
+		log.Info("DB connection down")
+		wg.Done()
+	}()
+
 	return pool, nil
+}
+
+func RunDB(ctx context.Context, wg *sync.WaitGroup, cs *counters.Counters) (*storagePkg.Storage, error) {
+	pool, err := connectToDB(ctx, wg)
+	if err != nil {
+		return nil, err
+	}
+
+	storage := storagePkg.NewPostgres(pool, cs, false)
+	storage, err = storagePkg.NewMemcached(storage, cs, config.GetConfigDB().MemcachedHost)
+	if err != nil {
+		return nil, err
+	}
+
+	return storage, nil
 }

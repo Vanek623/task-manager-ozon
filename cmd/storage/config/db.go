@@ -31,8 +31,10 @@ func GetConfigDB() DB {
 	return configDB
 }
 
+const envPath = "/home/ivan/GolandProjects/TaskBot/bin/.env"
+
 func init() {
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Load(envPath); err != nil {
 		log.Fatal(err)
 	}
 
@@ -48,4 +50,7 @@ func init() {
 	configDB.MaxConnLifetime = time.Hour
 	configDB.MinConnections = 2
 	configDB.MaxConnections = 4
+
+	// Cache configs
+	configDB.MemcachedHost = "localhost:11211"
 }

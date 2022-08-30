@@ -59,8 +59,8 @@ func (cmdr *Commander) Run(ctx context.Context) {
 			continue
 		}
 		cmdr.cs.Inc(counters.Incoming)
+
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, cmdr.handleMessage(ctx, update.Message))
-		log.WithField("text", msg.Text).Info("Incoming message")
 
 		_, err := cmdr.bot.Send(msg)
 		if err != nil {
@@ -75,6 +75,7 @@ func (cmdr *Commander) Run(ctx context.Context) {
 var startCommandName = "start"
 
 func (cmdr *Commander) handleMessage(ctx context.Context, msg *tgbotapi.Message) string {
+	log.WithField("text", msg.Text).Info("Incoming message")
 	c := cmdr.manager.GetCommand(msg.Command())
 	if c == nil {
 		return fmt.Sprintf("command /%s not found", msg.Command())

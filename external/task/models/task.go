@@ -1,7 +1,6 @@
 package models
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -17,14 +16,17 @@ type Task struct {
 	Edited      time.Time `db:"edited"`
 }
 
+// String формирование краткого описания
 func (t *Task) String() string {
 	return fmt.Sprintf("%d: %s", t.ID, t.Title)
 }
 
-func (t Task) MarshalBinary() ([]byte, error) {
-	return json.Marshal(t)
-}
-
-func (t *Task) UnmarshalBinary(data []byte) error {
-	return json.Unmarshal(data, t)
-}
+//// MarshalBinary создание бинарного представления
+//func (t Task) MarshalBinary() ([]byte, error) {
+//	return json.Marshal(t)
+//}
+//
+//// UnmarshalBinary создание задачи из бинарного представления
+//func (t *Task) UnmarshalBinary(data []byte) error {
+//	return json.Unmarshal(data, t)
+//}

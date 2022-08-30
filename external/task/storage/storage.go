@@ -31,7 +31,7 @@ var (
 	ErrTaskNotExist = errors.New("task doesn't exist")
 
 	// ErrHasNoSpace отсутсвует место в хранилище
-	ErrHasNoSpace = errors.New("Has no space for tasks, please delete one")
+	ErrHasNoSpace = errors.New("has no space for tasks, please delete one")
 )
 
 const (
@@ -50,8 +50,12 @@ func NewLocal() *Storage {
 }
 
 // NewPostgres создание хранилища PostgreSQL
-func NewPostgres(pool *pgxpool.Pool, cs *counters.Counters) *Storage {
-	return &Storage{newThreadSafeStorage(&postgres{pool: pool, cs: cs}, maxWorkers, workerIdleTimeout)}
+func NewPostgres(pool *pgxpool.Pool, cs *counters.Counters, isThreadSafe bool) *Storage {
+	if isThreadSafe {
+		return &Storage{newThreadSafeStorage(&postgres{pool: pool, cs: cs}, maxWorkers, workerIdleTimeout)}
+	}
+
+	return &Storage{&postgres{pool: pool, cs: cs}}
 }
 
 // NewSqlx создание хранилища Sqlx
@@ -59,9 +63,9 @@ func NewSqlx(db *sqlx.DB, cs *counters.Counters) *Storage {
 	return &Storage{newThreadSafeStorage(&sqlxDb{db: db, cs: cs}, maxWorkers, workerIdleTimeout)}
 }
 
-func NewMemcachedPostres(pool *pgxpool.Pool, cs *counters.Counters, memcachedHost string) (*Storage, error) {
-	p := &postgres{pool: pool, cs: cs}
-	mcP, err := newMemcached(memcachedHost, p)
+// NewMemcached создание кэша
+func NewMemcached(storage iTaskStorage, cs *counters.Counters, memcachedHost string) (*Storage, error) {
+	mcP, err := newMemcached(memcachedHost, storage, cs)
 	if err != nil {
 		return nil, err
 	}
