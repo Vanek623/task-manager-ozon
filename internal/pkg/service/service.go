@@ -1,3 +1,5 @@
+//go:generate mockgen -source ./service.go -destination=./mocks/service.go -package=mock_service
+
 package service
 
 import (
@@ -33,10 +35,10 @@ type Service struct {
 }
 
 // New создать структуру бизнес логики
-func New(s iStorage) (*Service, error) {
+func New(s iStorage) *Service {
 	return &Service{
 		storage: s,
-	}, nil
+	}
 }
 
 // AddTask добавить задачу

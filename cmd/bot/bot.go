@@ -33,22 +33,21 @@ type iService interface {
 }
 
 // Run запускает тг бота
-func Run(s iService) {
+func Run(ctx context.Context, s iService) {
 	token := readToken()
 	if token == "" {
-		log.Fatal("Empty token!")
+		log.Println("Empty token!")
+		return
 	}
 
 	cmdr, err := commander.New(token, s)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return
 	}
-
-	ctx, cl := context.WithCancel(context.Background())
-	defer cl()
 
 	log.Println("bot run")
 	if err = cmdr.Run(ctx); err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 }

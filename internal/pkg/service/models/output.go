@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Task краткая информация о задаче
 type Task struct {
@@ -46,6 +49,13 @@ func (t *DetailedTask) Description() string {
 // Edited время изменения задачи
 func (t *DetailedTask) Edited() time.Time {
 	return t.edited
+}
+
+func (t *DetailedTask) String() string {
+	return fmt.Sprintf("Title: %s \nDescription: %s \nEdited: %s",
+		t.Title(),
+		t.Description(),
+		t.Edited().Format(time.Stamp))
 }
 
 // NewDetailedTask создание подробного описания задачи
