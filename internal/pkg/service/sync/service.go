@@ -1,6 +1,6 @@
 //go:generate mockgen -source ./service.go -destination=./mocks/service.go -package=mock_service
 
-package service
+package sync
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	storageModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/validation"
 )
 
 // ErrValidation ошибка валидации данных
@@ -46,7 +47,7 @@ func New(s iStorage) *Service {
 
 // AddTask добавить задачу
 func (s *Service) AddTask(ctx context.Context, data *models.AddTaskData) (*uuid.UUID, error) {
-	if err := isTitleAndDescriptionOk(data.Title(), data.Description()); err != nil {
+	if err := validation.IsTitleAndDescriptionOk(data.Title(), data.Description()); err != nil {
 		return nil, err
 	}
 
@@ -79,7 +80,7 @@ func (s *Service) TasksList(ctx context.Context, data *models.ListTaskData) ([]*
 
 // UpdateTask обновить задачу
 func (s *Service) UpdateTask(ctx context.Context, data *models.UpdateTaskData) error {
-	if err := isTitleAndDescriptionOk(data.Title(), data.Description()); err != nil {
+	if err := validation.IsTitleAndDescriptionOk(data.Title(), data.Description()); err != nil {
 		return err
 	}
 

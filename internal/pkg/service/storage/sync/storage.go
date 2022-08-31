@@ -1,4 +1,4 @@
-package storage
+package sync
 
 import (
 	"context"
@@ -27,16 +27,5 @@ func NewGRPC(ctx context.Context, address string, cs *counters.Counters) (*Stora
 	if err != nil {
 		return nil, err
 	}
-	return &Storage{s}, nil
-}
-
-// NewKafka Хранилище на основе очереди для операций добавления, изменения, удаления
-// и синхронного хранилища для операций чтения
-func NewKafka(ctx context.Context, brokers []string, syncStorage iStorage, cs *counters.Counters) (*Storage, error) {
-	s, err := newKafka(ctx, brokers, syncStorage, cs)
-	if err != nil {
-		return nil, err
-	}
-
 	return &Storage{s}, nil
 }

@@ -1,4 +1,4 @@
-package service
+package validation
 
 import (
 	"strings"
@@ -11,16 +11,16 @@ func TestIsTitleOk(t *testing.T) {
 	t.Parallel()
 	t.Run("normal", func(t *testing.T) {
 		str := strings.Repeat("a", maxNameLen-1)
-		assert.NoError(t, isTitleOk(str))
+		assert.NoError(t, IsTitleOk(str))
 	})
 
 	t.Run("large", func(t *testing.T) {
 		str := strings.Repeat("a", maxNameLen+1)
-		assert.Error(t, isTitleOk(str))
+		assert.Error(t, IsTitleOk(str))
 	})
 
 	t.Run("empty", func(t *testing.T) {
-		assert.Error(t, isTitleOk(""))
+		assert.Error(t, IsTitleOk(""))
 	})
 }
 
@@ -28,15 +28,15 @@ func TestDescriptionOk(t *testing.T) {
 	t.Parallel()
 	t.Run("normal", func(t *testing.T) {
 		str := strings.Repeat("a", maxDescriptionLen-1)
-		assert.NoError(t, isDescriptionOk(str))
+		assert.NoError(t, IsDescriptionOk(str))
 	})
 
 	t.Run("large", func(t *testing.T) {
 		str := strings.Repeat("a", maxDescriptionLen+1)
-		assert.Error(t, isDescriptionOk(str))
+		assert.Error(t, IsDescriptionOk(str))
 	})
 
 	t.Run("empty", func(t *testing.T) {
-		assert.NoError(t, isDescriptionOk(""))
+		assert.NoError(t, IsDescriptionOk(""))
 	})
 }

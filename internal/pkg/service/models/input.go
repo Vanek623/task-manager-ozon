@@ -36,8 +36,8 @@ type UpdateTaskData struct {
 }
 
 // ID ID задачи
-func (d *UpdateTaskData) ID() *uuid.UUID {
-	return d.id
+func (d *UpdateTaskData) ID() uuid.UUID {
+	return *d.id
 }
 
 // Title заголовок задачи
@@ -108,8 +108,8 @@ type DeleteTaskData struct {
 }
 
 // ID ID задачи
-func (d *DeleteTaskData) ID() *uuid.UUID {
-	return d.id
+func (d *DeleteTaskData) ID() uuid.UUID {
+	return *d.id
 }
 
 // NewDeleteTaskData новый запрос на удаление
@@ -140,8 +140,8 @@ type GetTaskData struct {
 }
 
 // ID ID задачи
-func (d *GetTaskData) ID() *uuid.UUID {
-	return d.id
+func (d *GetTaskData) ID() uuid.UUID {
+	return *d.id
 }
 
 // NewGetTaskData новый запрос на чтение задачи
