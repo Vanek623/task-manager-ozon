@@ -20,8 +20,6 @@ type DB struct {
 	MaxConnLifetime time.Duration
 	MinConnections  int32
 	MaxConnections  int32
-
-	MemcachedHost string
 }
 
 var configDB DB
@@ -50,7 +48,4 @@ func init() {
 	configDB.MaxConnLifetime = time.Hour
 	configDB.MinConnections = 2
 	configDB.MaxConnections = 4
-
-	// Cache configs
-	configDB.MemcachedHost = "localhost:11211"
 }

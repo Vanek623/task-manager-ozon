@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
 	"sync"
 	"time"
 
@@ -37,14 +38,20 @@ func Run(ctx context.Context) error {
 
 	wg.Add(1)
 	go func() {
-		RunGRPC(ctx, storage, cs)
-		wg.Done()
+		defer wg.Done()
+		RunGRPC(ctx, &wg, storage, cs)
 	}()
 
 	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		RunKafka(ctx, storage, cs)
-		wg.Done()
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		RunHTTP(ctx, &wg)
 	}()
 
 	wg.Wait()
@@ -53,7 +60,7 @@ func Run(ctx context.Context) error {
 }
 
 // RunGRPC запуск GRPC
-func RunGRPC(ctx context.Context, s *storagePkg.Storage, cs *counters.Counters) {
+func RunGRPC(ctx context.Context, wg *sync.WaitGroup, s *storagePkg.Storage, cs *counters.Counters) {
 	ctx, cl := context.WithCancel(ctx)
 	defer cl()
 
@@ -67,7 +74,9 @@ func RunGRPC(ctx context.Context, s *storagePkg.Storage, cs *counters.Counters) 
 
 	pb.RegisterStorageServer(server, storageApiPkg.NewProtobufAPI(s, cs))
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		<-ctx.Done()
 		server.Stop()
 		log.Info("Kafka down")
@@ -150,17 +159,42 @@ func connectToDB(ctx context.Context, wg *sync.WaitGroup) (*pgxpool.Pool, error)
 	return pool, nil
 }
 
+// RunDB поднятие БД
 func RunDB(ctx context.Context, wg *sync.WaitGroup, cs *counters.Counters) (*storagePkg.Storage, error) {
 	pool, err := connectToDB(ctx, wg)
 	if err != nil {
 		return nil, err
 	}
 
-	storage := storagePkg.NewPostgres(pool, cs, false)
-	storage, err = storagePkg.NewMemcached(storage, cs, config.GetConfigDB().MemcachedHost)
+	pg := storagePkg.NewPostgres(pool, cs, false)
+	storage, err := storagePkg.NewMemcached(pg, cs, config.MemcachedHost)
 	if err != nil {
 		return nil, err
 	}
 
 	return storage, nil
+}
+
+// RunHTTP запуск HTTP сервера (счетчики)
+func RunHTTP(ctx context.Context, wg *sync.WaitGroup) {
+	serv := http.Server{
+		Addr:              config.HTTPHost,
+		ReadHeaderTimeout: time.Second,
+	}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-ctx.Done()
+
+		if err := serv.Shutdown(context.Background()); err != nil {
+			log.Error(err)
+		}
+	}()
+
+	if err := serv.ListenAndServe(); err != nil {
+		if !errors.Is(err, http.ErrServerClosed) {
+			log.Error(err)
+		}
+	}
 }

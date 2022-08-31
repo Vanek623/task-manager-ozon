@@ -65,10 +65,10 @@ func NewSqlx(db *sqlx.DB, cs *counters.Counters) *Storage {
 
 // NewMemcached создание кэша
 func NewMemcached(storage iTaskStorage, cs *counters.Counters, memcachedHost string) (*Storage, error) {
-	mcP, err := newMemcached(memcachedHost, storage, cs)
+	cachedPostgres, err := newMemcached(memcachedHost, storage, cs)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Storage{newThreadSafeStorage(mcP, maxWorkers, workerIdleTimeout)}, nil
+	return &Storage{newThreadSafeStorage(cachedPostgres, maxWorkers, workerIdleTimeout)}, nil
 }

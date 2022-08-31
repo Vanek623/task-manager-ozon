@@ -90,7 +90,7 @@ func (m *memcached) List(ctx context.Context, limit, offset uint64) ([]*models.T
 	if err == nil && canBeCached {
 		var tmp []*models.Task
 		if err = json.Unmarshal(item.Value, &tmp); err == nil {
-			for i := offset; i < offset+limit; i++ {
+			for i := offset; i < offset+limit && i < uint64(len(tmp)); i++ {
 				tasks = append(tasks, tmp[i])
 			}
 
@@ -110,7 +110,7 @@ func (m *memcached) List(ctx context.Context, limit, offset uint64) ([]*models.T
 		m.cs.Inc(counters.CacheMiss)
 
 		var tmp []*models.Task
-		tmp, err = m.storage.List(ctx, 0, listCachedCount)
+		tmp, err = m.storage.List(ctx, listCachedCount, 0)
 		if err != nil {
 			return nil, err
 		}
