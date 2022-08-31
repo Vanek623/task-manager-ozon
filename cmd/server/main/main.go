@@ -42,6 +42,4 @@ func main() {
 		cancel()
 		log.Error(err)
 	}
-
-	log.Info("Server shutdown")
 }

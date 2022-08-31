@@ -61,26 +61,33 @@ func Run(ctx context.Context) error {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		RunHTTP(ctx)
+		RunHTTP(ctx, &wg)
+		log.Info("HTTP down")
 	}()
 
 	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		bot.Run(ctx, s, cs)
+		log.Info("Bot down")
 	}()
 
 	wg.Add(1)
 	go func() {
-		RunGRPC(ctx, s, cs)
+		defer wg.Done()
+		RunGRPC(ctx, &wg, s, cs)
+		log.Info("GRPC down")
 	}()
 
 	wg.Wait()
+
+	log.Info("Server down")
 
 	return nil
 }
 
 // RunGRPC запускает GRPC
-func RunGRPC(ctx context.Context, service iService, cs *counters.Counters) {
+func RunGRPC(ctx context.Context, wg *sync.WaitGroup, service iService, cs *counters.Counters) {
 	listener, err := net.Listen(connectionType, addressGRPC)
 	if err != nil {
 		log.Error(err)
@@ -92,12 +99,11 @@ func RunGRPC(ctx context.Context, service iService, cs *counters.Counters) {
 
 	log.WithField("host", addressGRPC).Info("GRPC server up")
 
-	done := make(chan struct{})
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		<-ctx.Done()
-
 		s.Stop()
-		done <- struct{}{}
 	}()
 
 	if err = s.Serve(listener); err != nil {
@@ -107,12 +113,10 @@ func RunGRPC(ctx context.Context, service iService, cs *counters.Counters) {
 			log.Error(err)
 		}
 	}
-
-	<-done
 }
 
 // RunHTTP запускает REST и swagger
-func RunHTTP(ctx context.Context) {
+func RunHTTP(ctx context.Context, wg *sync.WaitGroup) {
 	gwmux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	if err := pb.RegisterServiceHandlerFromEndpoint(ctx, gwmux, addressGRPC, opts); err != nil {
@@ -136,22 +140,18 @@ func RunHTTP(ctx context.Context) {
 		ReadHeaderTimeout: time.Second,
 	}
 
-	done := make(chan struct{})
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		<-ctx.Done()
 		if err := serv.Shutdown(context.Background()); err != nil {
 			log.Error(err)
 		}
-		done <- struct{}{}
 	}()
 
 	if err := serv.ListenAndServe(); err != nil {
-		if errors.Is(err, http.ErrServerClosed) {
-			log.Info(err)
-		} else {
+		if !errors.Is(err, http.ErrServerClosed) {
 			log.Error(err)
 		}
 	}
-
-	<-done
 }

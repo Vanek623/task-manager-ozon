@@ -37,7 +37,7 @@ func newKafka(ctx context.Context, brokers []string, syncStorage iStorage, cs *c
 		if err := producer.Close(); err != nil {
 			log.Error(err)
 		} else {
-			log.Info("Producer closed")
+			log.Info("Kafka down")
 		}
 	}()
 

@@ -41,7 +41,7 @@ func New(token string, s iService, cs *counters.Counters) (*Commander, error) {
 	return cmdr, nil
 }
 
-const timeOutValue = 60
+const timeOutValue = 5
 
 // Run запуск бота
 func (cmdr *Commander) Run(ctx context.Context) {
@@ -52,6 +52,7 @@ func (cmdr *Commander) Run(ctx context.Context) {
 	go func() {
 		<-ctx.Done()
 		cmdr.bot.StopReceivingUpdates()
+
 	}()
 
 	for update := range updates {
