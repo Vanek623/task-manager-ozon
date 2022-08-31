@@ -36,6 +36,10 @@ func (m *memcached) Add(ctx context.Context, t *models.Task) error {
 		log.Error(err)
 	}
 
+	if err := m.client.Delete(listKey); err != nil && !errors.Is(err, memcache.ErrCacheMiss) {
+		log.Error(err)
+	}
+
 	return nil
 }
 
@@ -46,6 +50,10 @@ func (m *memcached) Delete(ctx context.Context, ID *uuid.UUID) error {
 	}
 
 	if err = m.client.Delete(ID.String()); err != nil && !errors.Is(err, memcache.ErrCacheMiss) {
+		log.Error(err)
+	}
+
+	if err = m.client.Delete(listKey); err != nil && !errors.Is(err, memcache.ErrCacheMiss) {
 		log.Error(err)
 	}
 
