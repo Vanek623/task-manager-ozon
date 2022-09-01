@@ -2,9 +2,11 @@ package storage
 
 import (
 	"context"
+	"time"
 
-	redisPkg "github.com/go-redis/redis"
+	redisPkg "github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 )
@@ -40,11 +42,22 @@ func (r *redis) Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error) {
 	panic("implement me")
 }
 
-func newRedis(opts *redisPkg.Options, storage iTaskStorage, cs *counters.Counters) (*redis, error) {
+func newRedis(ctx context.Context, opts *redisPkg.Options, storage iTaskStorage, cs *counters.Counters) (*redis, error) {
 	client := redisPkg.NewClient(opts)
-	if res := client.Ping(); res.Err() != nil {
+
+	pingCtx, cl := context.WithTimeout(ctx, time.Second)
+	defer cl()
+
+	if res := client.Ping(pingCtx); res.Err() != nil {
 		return nil, res.Err()
 	}
+
+	go func() {
+		<-ctx.Done()
+		if err := client.Close(); err != nil {
+			log.Error(err)
+		}
+	}()
 
 	return &redis{
 		storage: storage,

@@ -59,7 +59,8 @@ func (s *grpc) Add(ctx context.Context, data *storageModelsPkg.AddTaskData) erro
 }
 
 func (s *grpc) Delete(ctx context.Context, data *models.DeleteTaskData) error {
-	request := &pb.TaskDeleteRequest{ID: uuidToBytes(data.ID())}
+	id := data.ID()
+	request := &pb.TaskDeleteRequest{ID: uuidToBytes(&id)}
 
 	log.WithFields(log.Fields{
 		"id": request.GetID(),
@@ -108,8 +109,9 @@ func (s *grpc) List(ctx context.Context, data *models.ListTaskData) ([]*models.T
 }
 
 func (s *grpc) Update(ctx context.Context, data *models.UpdateTaskData) error {
+	id := data.ID()
 	request := &pb.TaskUpdateRequest{
-		ID:    uuidToBytes(data.ID()),
+		ID:    uuidToBytes(&id),
 		Title: data.Title(),
 	}
 
@@ -133,8 +135,8 @@ func (s *grpc) Update(ctx context.Context, data *models.UpdateTaskData) error {
 }
 
 func (s *grpc) Get(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error) {
-
-	request := &pb.TaskGetRequest{ID: uuidToBytes(data.ID())}
+	id := data.ID()
+	request := &pb.TaskGetRequest{ID: uuidToBytes(&id)}
 
 	log.WithFields(log.Fields{
 		"id": request.GetID(),

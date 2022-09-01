@@ -3,7 +3,9 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"time"
 
+	"github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/Shopify/sarama"
@@ -18,17 +20,21 @@ const (
 	topicAddRequestName    = "income_add_request"
 	topicDeleteRequestName = "income_delete_request"
 	topicUpdateRequestName = "income_update_request"
+
+	expiration = time.Minute
 )
 
 type kafka struct {
 	storage iTaskStorage
 	cs      *counters.Counters
+	rc      *redis.Client
 }
 
-func newKafka(storage iTaskStorage, cs *counters.Counters) *kafka {
+func newKafka(storage iTaskStorage, cs *counters.Counters, client *redis.Client) *kafka {
 	return &kafka{
 		storage: storage,
 		cs:      cs,
+		rc:      client,
 	}
 }
 
@@ -137,4 +143,57 @@ func (k *kafka) updateTask(ctx context.Context, data []byte) error {
 	})
 
 	return err
+}
+
+func (k *kafka) getTask(ctx context.Context, data []byte) error {
+	obj := struct {
+		RequestID uuid.UUID
+		ID        uuid.UUID
+	}{}
+
+	err := json.Unmarshal(data, &obj)
+	if err != nil {
+		return err
+	}
+
+	resp, err := json.Marshal(tasks)
+	if err != nil {
+		return err
+	}
+
+	_, err = k.rc.Set(ctx, obj.RequestID.String(), resp, expiration).Result()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (k *kafka) listTasks(ctx context.Context, data []byte) error {
+	obj := struct {
+		RequestID     uuid.UUID
+		Limit, Offset uint64
+	}{}
+
+	err := json.Unmarshal(data, &obj)
+	if err != nil {
+		return err
+	}
+
+	tasks, err := k.storage.List(ctx, obj.Limit, obj.Offset)
+	if err != nil {
+		return err
+	}
+
+	resp, err := json.Marshal(tasks)
+	if err != nil {
+		return err
+	}
+
+	_, err = k.rc.Set(ctx, obj.RequestID.String(), resp, expiration).Result()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
