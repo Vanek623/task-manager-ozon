@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
 	"github.com/pkg/errors"
@@ -20,12 +22,14 @@ type ICommand interface {
 }
 
 type iService interface {
-	AddTask(ctx context.Context, data *models.AddTaskData) (uint64, error)
+	AddTask(ctx context.Context, data *models.AddTaskData) (*uuid.UUID, error)
 	DeleteTask(ctx context.Context, data *models.DeleteTaskData) error
 	TasksList(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error)
 	UpdateTask(ctx context.Context, data *models.UpdateTaskData) error
 	GetTask(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error)
 }
+
+var enumerator taskEnumerator
 
 type command struct {
 	name        string

@@ -2,7 +2,9 @@ package command
 
 import (
 	"context"
+
 	"fmt"
+
 	"strconv"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
@@ -23,12 +25,17 @@ func (c *updateCommand) Execute(ctx context.Context, args string) string {
 		return fmt.Sprintf("Cannot parse %s", argsArr[0])
 	}
 
-	data := models.NewUpdateTaskData(id, argsArr[1], argsArr[2])
+	uid := enumerator.Get(id)
+	if uid == nil {
+		return fmt.Sprintf("Cannot find task #%d", id)
+	}
+
+	data := models.NewUpdateTaskData(uid, argsArr[1], argsArr[2])
 	if err = c.service.UpdateTask(ctx, data); err != nil {
 		return err.Error()
 	}
 
-	return "TaskBrief updated"
+	return "Task updated"
 }
 
 func newUpdateCommand(s iService) *updateCommand {

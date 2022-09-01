@@ -2,10 +2,15 @@ package storage
 
 import (
 	"context"
-	"log"
 	"time"
 
+	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/counters"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+	storageModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/tracer"
+	"go.opentelemetry.io/otel"
 
 	"github.com/pkg/errors"
 
@@ -21,50 +26,13 @@ const (
 
 type grpc struct {
 	client pb.StorageClient
+	cs     *counters.Counters
 }
 
-func (s *grpc) Add(ctx context.Context, data *models.AddTaskData) (uint64, error) {
-	request := &pb.TaskAddRequest{Title: data.Title()}
-
-	if tmp := data.Description(); tmp != "" {
-		request.Description = &tmp
-	}
-
-	resp, err := s.client.TaskAdd(ctx, request)
-	if err != nil {
-		return 0, err
-	}
-
-	return resp.GetID(), nil
-}
-
-func (s *grpc) Delete(ctx context.Context, data *models.DeleteTaskData) error {
-	_, err := s.client.TaskDelete(ctx, &pb.TaskDeleteRequest{ID: data.ID()})
-
-	return err
-}
-
-func (s *grpc) List(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error) {
-	resp, err := s.client.TaskList(ctx, &pb.TaskListRequest{
-		Limit:  data.Limit(),
-		Offset: data.Offset(),
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	res := make([]*models.Task, len(resp.GetTasks()))
-	for i, task := range resp.GetTasks() {
-		res[i] = models.NewTask(task.GetID(), task.GetTitle())
-	}
-
-	return res, nil
-}
-
-func (s *grpc) Update(ctx context.Context, data *models.UpdateTaskData) error {
-	request := &pb.TaskUpdateRequest{
-		ID:    data.ID(),
+func (s *grpc) Add(ctx context.Context, data *storageModelsPkg.AddTaskData) error {
+	id := data.ID()
+	request := &pb.TaskAddRequest{
+		ID:    uuidToBytes(&id),
 		Title: data.Title(),
 	}
 
@@ -72,6 +40,90 @@ func (s *grpc) Update(ctx context.Context, data *models.UpdateTaskData) error {
 		request.Description = &tmp
 	}
 
+	log.WithFields(log.Fields{
+		"id":          request.GetID(),
+		"title":       request.GetTitle(),
+		"description": request.GetDescription(),
+	}).Info("Outbound add request")
+
+	_, span := otel.Tracer(tracer.Name).Start(ctx, tracer.MakeSpanName("Add GRPC"))
+	defer span.End()
+
+	s.cs.Inc(counters.Outbound)
+	_, err := s.client.TaskAdd(ctx, request)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *grpc) Delete(ctx context.Context, data *models.DeleteTaskData) error {
+	request := &pb.TaskDeleteRequest{ID: uuidToBytes(data.ID())}
+
+	log.WithFields(log.Fields{
+		"id": request.GetID(),
+	}).Info("Outbound delete request")
+
+	_, span := otel.Tracer(tracer.Name).Start(ctx, tracer.MakeSpanName("Delete GRPC"))
+	defer span.End()
+
+	s.cs.Inc(counters.Outbound)
+	_, err := s.client.TaskDelete(ctx, request)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *grpc) List(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error) {
+	request := &pb.TaskListRequest{
+		Limit:  data.Limit(),
+		Offset: data.Offset(),
+	}
+
+	log.WithFields(log.Fields{
+		"offset": request.GetOffset(),
+		"limit":  request.GetLimit(),
+	}).Info("Outbound list request")
+
+	s.cs.Inc(counters.Outbound)
+	resp, err := s.client.TaskList(ctx, request)
+
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]*models.Task, len(resp.GetTasks()))
+	for i, task := range resp.GetTasks() {
+		id, err := uuid.FromBytes(task.GetID())
+		if err != nil {
+			return nil, err
+		}
+		res[i] = models.NewTask(&id, task.GetTitle())
+	}
+
+	return res, nil
+}
+
+func (s *grpc) Update(ctx context.Context, data *models.UpdateTaskData) error {
+	request := &pb.TaskUpdateRequest{
+		ID:    uuidToBytes(data.ID()),
+		Title: data.Title(),
+	}
+
+	if tmp := data.Description(); tmp != "" {
+		request.Description = &tmp
+	}
+
+	log.WithFields(log.Fields{
+		"id":          request.GetID(),
+		"title":       request.GetTitle(),
+		"description": request.GetDescription(),
+	}).Info("Outbound update request")
+
+	s.cs.Inc(counters.Outbound)
 	_, err := s.client.TaskUpdate(ctx, request)
 	if err != nil {
 		return err
@@ -81,7 +133,15 @@ func (s *grpc) Update(ctx context.Context, data *models.UpdateTaskData) error {
 }
 
 func (s *grpc) Get(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error) {
-	resp, err := s.client.TaskGet(ctx, &pb.TaskGetRequest{ID: data.ID()})
+
+	request := &pb.TaskGetRequest{ID: uuidToBytes(data.ID())}
+
+	log.WithFields(log.Fields{
+		"id": request.GetID(),
+	}).Info("Outbound get request")
+
+	s.cs.Inc(counters.Outbound)
+	resp, err := s.client.TaskGet(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -89,21 +149,38 @@ func (s *grpc) Get(ctx context.Context, data *models.GetTaskData) (*models.Detai
 	return models.NewDetailedTask(resp.GetTitle(), resp.GetDescription(), time.Unix(resp.GetEdited(), 0)), nil
 }
 
-func newGRPC(address string) (*grpc, error) {
+func newGRPC(ctx context.Context, address string, cs *counters.Counters) (*grpc, error) {
 	time.Sleep(reconnectTimeout)
 
 	con, err := grpcPkg.Dial(address, grpcPkg.WithTransportCredentials(insecure.NewCredentials()))
 	for count := 1; err != nil || con == nil; count++ {
 		if count > reconnectMaxCount {
-			return nil, errors.Wrap(err, "service_storage: cannot connect to storage server")
+			return nil, errors.Wrap(err, "service_storage: cannot connect to storage")
 		}
 
-		log.Printf("cannot connect to server, try to connect #%d of %d in %d\n", count, reconnectMaxCount, reconnectTimeout)
+		log.Errorf("cannot connect to storage, try to connect #%d of %d in %.1f s", count, reconnectMaxCount, reconnectTimeout.Seconds())
 		time.Sleep(reconnectTimeout)
 		con, err = grpcPkg.Dial(address, grpcPkg.WithTransportCredentials(insecure.NewCredentials()))
 	}
 
+	go func() {
+		<-ctx.Done()
+		if err := con.Close(); err != nil {
+			log.Error(err)
+		} else {
+			log.Info("GRPC connection closed")
+		}
+	}()
+
 	return &grpc{
 		client: pb.NewStorageClient(con),
+		cs:     cs,
 	}, nil
+}
+
+func uuidToBytes(ID *uuid.UUID) []byte {
+	bytes := make([]byte, 16)
+	copy(bytes, ID[:])
+
+	return bytes
 }

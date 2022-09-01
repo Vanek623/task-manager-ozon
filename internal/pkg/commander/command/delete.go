@@ -23,7 +23,12 @@ func (c *deleteCommand) Execute(ctx context.Context, args string) string {
 		return fmt.Sprintf("Cannot parse %s", argsArr[0])
 	}
 
-	if err = c.service.DeleteTask(ctx, models.NewDeleteTaskData(id)); err != nil {
+	uid := enumerator.Delete(id)
+	if uid == nil {
+		return fmt.Sprintf("Cannot find task #%d", id)
+	}
+
+	if err = c.service.DeleteTask(ctx, models.NewDeleteTaskData(uid)); err != nil {
 		return err.Error()
 	}
 

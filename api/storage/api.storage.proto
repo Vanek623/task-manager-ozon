@@ -20,12 +20,11 @@ service Storage {
 // ---------------------------------------------------------------------------------------------------------------------
 
 message TaskAddRequest {
-  string title = 1;
-  optional string description = 2;
+  bytes ID = 1;
+  string title = 2;
+  optional string description = 3;
 }
-message TaskAddResponse {
-  uint64 ID = 1;
-}
+message TaskAddResponse {}
 
 // ---------------------------------------------------------------------------------------------------------------------
 // TaskList endpoint messages
@@ -39,7 +38,7 @@ message TaskListResponse {
   repeated Task tasks = 1;
 
   message Task {
-    uint64 ID = 1;
+    bytes ID = 1;
     string title = 2;
   }
 }
@@ -49,7 +48,7 @@ message TaskListResponse {
 // ---------------------------------------------------------------------------------------------------------------------
 
 message TaskUpdateRequest {
-  uint64 ID = 1;
+  bytes ID = 1;
   string title = 2;
   optional string description = 3;
 }
@@ -60,7 +59,7 @@ message TaskUpdateResponse {}
 // ---------------------------------------------------------------------------------------------------------------------
 
 message TaskDeleteRequest {
-  uint64 ID = 1;
+  bytes ID = 1;
 }
 message TaskDeleteResponse {}
 
@@ -69,7 +68,7 @@ message TaskDeleteResponse {}
 // ---------------------------------------------------------------------------------------------------------------------
 
 message TaskGetRequest {
-  uint64  ID = 1;
+  bytes ID = 1;
 }
 message TaskGetResponse {
   string title = 1;

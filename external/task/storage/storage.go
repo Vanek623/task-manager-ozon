@@ -6,6 +6,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
+
 	"github.com/jmoiron/sqlx"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
@@ -16,11 +19,11 @@ import (
 )
 
 type iTaskStorage interface {
-	Add(ctx context.Context, t *models.Task) (uint64, error)
-	Delete(ctx context.Context, ID uint64) error
+	Add(ctx context.Context, t *models.Task) error
+	Delete(ctx context.Context, ID *uuid.UUID) error
 	List(ctx context.Context, limit, offset uint64) ([]*models.Task, error)
 	Update(ctx context.Context, t *models.Task) error
-	Get(ctx context.Context, ID uint64) (*models.Task, error)
+	Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error)
 }
 
 var (
@@ -42,24 +45,16 @@ type Storage struct {
 }
 
 // NewLocal создание локального многопоточного хранилища
-func NewLocal(isThreadSafe bool) *Storage {
-	if isThreadSafe {
-		return &Storage{newThreadSafeStorage(newLocal(), maxWorkers, workerIdleTimeout)}
-	}
-
-	return &Storage{newLocal()}
+func NewLocal() *Storage {
+	return &Storage{newThreadSafeStorage(newLocal(), maxWorkers, workerIdleTimeout)}
 }
 
 // NewPostgres создание хранилища PostgreSQL
-func NewPostgres(pool *pgxpool.Pool, isThreadSafe bool) *Storage {
-	if isThreadSafe {
-		return &Storage{newThreadSafeStorage(&postgres{pool: pool}, maxWorkers, workerIdleTimeout)}
-	}
-
-	return &Storage{&postgres{pool: pool}}
+func NewPostgres(pool *pgxpool.Pool, cs *counters.Counters) *Storage {
+	return &Storage{newThreadSafeStorage(&postgres{pool: pool, cs: cs}, maxWorkers, workerIdleTimeout)}
 }
 
 // NewSqlx создание хранилища Sqlx
-func NewSqlx(db *sqlx.DB) *Storage {
-	return &Storage{newThreadSafeStorage(&sqlxDb{db: db}, maxWorkers, workerIdleTimeout)}
+func NewSqlx(db *sqlx.DB, cs *counters.Counters) *Storage {
+	return &Storage{newThreadSafeStorage(&sqlxDb{db: db, cs: cs}, maxWorkers, workerIdleTimeout)}
 }

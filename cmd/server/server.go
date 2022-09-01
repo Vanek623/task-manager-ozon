@@ -2,19 +2,23 @@ package server
 
 import (
 	"context"
-	"log"
 	"net"
 	"net/http"
+	"sync"
+	"time"
+
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
+	serviceApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/counters"
+
+	"github.com/google/uuid"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
 	serviceStorage "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
-
-	serviceApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api/service"
-
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc/credentials/insecure"
@@ -23,59 +27,100 @@ import (
 )
 
 type iService interface {
-	AddTask(ctx context.Context, data *models.AddTaskData) (uint64, error)
+	AddTask(ctx context.Context, data *models.AddTaskData) (*uuid.UUID, error)
 	DeleteTask(ctx context.Context, data *models.DeleteTaskData) error
 	TasksList(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error)
 	UpdateTask(ctx context.Context, data *models.UpdateTaskData) error
 	GetTask(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error)
 }
 
-// Run запуск GRPC, REST and Tg Bot
-func Run() error {
-	ctx, cl := context.WithCancel(context.Background())
+// Run запуск Kafka&GRPC, REST and Tg Bot
+func Run(ctx context.Context) error {
+	ctx, cl := context.WithCancel(ctx)
 	defer cl()
 
-	storage, err := serviceStorage.NewGRPC(storageAddress)
+	cs := counters.New("task_service")
+	syncStorage, err := serviceStorage.NewGRPC(ctx, storageAddress, cs)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	s := service.New(storage)
-
-	go RunREST(ctx)
-	go bot.Run(ctx, s)
-
-	return RunGRPC(s)
-}
-
-// RunGRPC запускает GRPC
-func RunGRPC(service iService) error {
-	listener, err := net.Listen(connectionType, addressGRPC)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	s := grpc.NewServer()
-	pb.RegisterServiceServer(s, serviceApiPkg.NewAPI(service))
-
-	log.Printf("GRPC up with address %s", addressGRPC)
-
-	if err = s.Serve(listener); err != nil {
 		return err
 	}
+
+	log.WithField("host", storageAddress).Debug("Connected to storage over GRPC")
+
+	asyncStorage, err := serviceStorage.NewKafka(ctx, brokers, syncStorage, cs)
+	if err != nil {
+		return err
+	}
+
+	log.WithField("brokers", brokers).Debug("Connected to storage over Kafka")
+
+	s := service.New(asyncStorage)
+
+	wg := sync.WaitGroup{}
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		RunHTTP(ctx)
+	}()
+
+	wg.Add(1)
+	go func() {
+		bot.Run(ctx, s, cs)
+	}()
+
+	wg.Add(1)
+	go func() {
+		RunGRPC(ctx, s, cs)
+	}()
+
+	wg.Wait()
 
 	return nil
 }
 
-// RunREST запускает REST
-func RunREST(ctx context.Context) {
+// RunGRPC запускает GRPC
+func RunGRPC(ctx context.Context, service iService, cs *counters.Counters) {
+	listener, err := net.Listen(connectionType, addressGRPC)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	s := grpc.NewServer()
+	pb.RegisterServiceServer(s, serviceApiPkg.NewAPI(service, cs))
+
+	log.WithField("host", addressGRPC).Info("GRPC server up")
+
+	done := make(chan struct{})
+	go func() {
+		<-ctx.Done()
+
+		s.Stop()
+		done <- struct{}{}
+	}()
+
+	if err = s.Serve(listener); err != nil {
+		if errors.Is(err, grpc.ErrServerStopped) {
+			log.Info(err)
+		} else {
+			log.Error(err)
+		}
+	}
+
+	<-done
+}
+
+// RunHTTP запускает REST и swagger
+func RunHTTP(ctx context.Context) {
 	gwmux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	if err := pb.RegisterServiceHandlerFromEndpoint(ctx, gwmux, addressGRPC, opts); err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		return
 	}
 
-	log.Printf("REST up with address %s", addressHTTP)
+	log.WithField("host", addressHTTP).Info("REST up")
 
 	mux := http.NewServeMux()
 	mux.Handle("/", gwmux)
@@ -83,18 +128,30 @@ func RunREST(ctx context.Context) {
 	fs := http.FileServer(http.Dir(swaggerDir))
 	mux.Handle("/swagger/", http.StripPrefix("/swagger/", fs))
 
-	log.Printf("swagger up with address %s", addressHTTP)
+	log.WithField("host", addressHTTP).Info("Swagger up")
 
-	ch := make(chan struct{})
+	serv := http.Server{
+		Addr:              addressHTTP,
+		Handler:           mux,
+		ReadHeaderTimeout: time.Second,
+	}
+
+	done := make(chan struct{})
 	go func() {
-		if err := http.ListenAndServe(addressHTTP, mux); err != nil {
-			log.Println(err)
+		<-ctx.Done()
+		if err := serv.Shutdown(context.Background()); err != nil {
+			log.Error(err)
 		}
-		ch <- struct{}{}
+		done <- struct{}{}
 	}()
 
-	select {
-	case <-ctx.Done():
-	case <-ch:
+	if err := serv.ListenAndServe(); err != nil {
+		if errors.Is(err, http.ErrServerClosed) {
+			log.Info(err)
+		} else {
+			log.Error(err)
+		}
 	}
+
+	<-done
 }

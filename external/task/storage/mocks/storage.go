@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	uuid "github.com/google/uuid"
 	models "gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 )
 
@@ -36,12 +37,11 @@ func (m *MockiTaskStorage) EXPECT() *MockiTaskStorageMockRecorder {
 }
 
 // Add mocks base method.
-func (m *MockiTaskStorage) Add(ctx context.Context, t *models.Task) (uint64, error) {
+func (m *MockiTaskStorage) Add(ctx context.Context, t *models.Task) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Add", ctx, t)
-	ret0, _ := ret[0].(uint64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Add indicates an expected call of Add.
@@ -51,7 +51,7 @@ func (mr *MockiTaskStorageMockRecorder) Add(ctx, t interface{}) *gomock.Call {
 }
 
 // Delete mocks base method.
-func (m *MockiTaskStorage) Delete(ctx context.Context, ID uint64) error {
+func (m *MockiTaskStorage) Delete(ctx context.Context, ID *uuid.UUID) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Delete", ctx, ID)
 	ret0, _ := ret[0].(error)
@@ -65,7 +65,7 @@ func (mr *MockiTaskStorageMockRecorder) Delete(ctx, ID interface{}) *gomock.Call
 }
 
 // Get mocks base method.
-func (m *MockiTaskStorage) Get(ctx context.Context, ID uint64) (*models.Task, error) {
+func (m *MockiTaskStorage) Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", ctx, ID)
 	ret0, _ := ret[0].(*models.Task)

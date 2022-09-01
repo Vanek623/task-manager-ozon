@@ -5,15 +5,18 @@ package service
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+	storageModelsPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/models"
 )
 
 // ErrValidation ошибка валидации данных
 var ErrValidation = errors.New("invalid data")
 
 type iService interface {
-	AddTask(ctx context.Context, data *models.AddTaskData) (uint64, error)
+	AddTask(ctx context.Context, data *models.AddTaskData) (*uuid.UUID, error)
 	DeleteTask(ctx context.Context, data *models.DeleteTaskData) error
 	TasksList(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error)
 	UpdateTask(ctx context.Context, data *models.UpdateTaskData) error
@@ -21,7 +24,7 @@ type iService interface {
 }
 
 type iStorage interface {
-	Add(ctx context.Context, data *models.AddTaskData) (uint64, error)
+	Add(ctx context.Context, data *storageModelsPkg.AddTaskData) error
 	Delete(ctx context.Context, data *models.DeleteTaskData) error
 	List(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error)
 	Update(ctx context.Context, data *models.UpdateTaskData) error
@@ -42,12 +45,21 @@ func New(s iStorage) *Service {
 }
 
 // AddTask добавить задачу
-func (s *Service) AddTask(ctx context.Context, data *models.AddTaskData) (uint64, error) {
+func (s *Service) AddTask(ctx context.Context, data *models.AddTaskData) (*uuid.UUID, error) {
 	if err := isTitleAndDescriptionOk(data.Title(), data.Description()); err != nil {
-		return 0, err
+		return nil, err
 	}
 
-	return s.storage.Add(ctx, data)
+	id := uuid.New()
+	sData := storageModelsPkg.NewAddTaskData(&id, data.Title(), data.Description())
+
+	log.Debugf("Adding task %s", id)
+
+	if err := s.storage.Add(ctx, sData); err != nil {
+		return nil, err
+	}
+
+	return &id, nil
 }
 
 // DeleteTask удалить задачу

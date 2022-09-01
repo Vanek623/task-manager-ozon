@@ -7,7 +7,7 @@ const (
 	portGRPC    = ":8081"
 	addressGRPC = address + portGRPC
 
-	portHTTP    = ":8080"
+	portHTTP    = ":8083"
 	addressHTTP = address + portHTTP
 
 	connectionType = "tcp"
@@ -15,4 +15,8 @@ const (
 	storageAddress = "localhost:8082"
 
 	swaggerDir = "/home/ivan/GolandProjects/TaskBot/swagger"
+)
+
+var (
+	brokers = []string{"localhost:9095"}
 )

@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
+
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 
 	"github.com/pkg/errors"
@@ -13,52 +15,50 @@ const localCapacity = 100
 
 // local структура локального хранилища
 type local struct {
-	data   map[uint64]*models.Task
-	lastID uint64
+	data map[uuid.UUID]*models.Task
 }
 
 func newLocal() *local {
 	return &local{
-		data:   make(map[uint64]*models.Task),
-		lastID: 1,
+		data: make(map[uuid.UUID]*models.Task),
 	}
 }
 
-func (s *local) Add(_ context.Context, t *models.Task) (uint64, error) {
+func (s *local) Add(_ context.Context, t *models.Task) error {
 	if len(s.data) >= localCapacity {
-		return 0, ErrHasNoSpace
+		return ErrHasNoSpace
 	}
 
-	t.ID = s.lastID
-	s.lastID++
 	t.Created = time.Now()
 
 	s.data[t.ID] = t
 
-	return t.ID, nil
+	return nil
 }
 
-func (s *local) Delete(_ context.Context, ID uint64) error {
-	if _, ok := s.data[ID]; !ok {
+func (s *local) Delete(_ context.Context, ID *uuid.UUID) error {
+	if _, ok := s.data[*ID]; !ok {
 		return errors.Wrapf(ErrTaskNotExist, "ID: [%d]", ID)
 	}
 
-	delete(s.data, ID)
+	delete(s.data, *ID)
 	return nil
 }
 
 func (s *local) List(_ context.Context, limit, offset uint64) ([]*models.Task, error) {
 	res := make([]*models.Task, 0, limit)
 
-	for i, t := range s.data {
-		if i >= offset+limit {
+	count := uint64(0)
+	for _, t := range s.data {
+		if count >= offset+limit {
 			break
 		}
-		if i < offset {
+		if count < offset {
 			continue
 		}
 
 		res = append(res, t)
+		count++
 	}
 
 	return res, nil
@@ -75,10 +75,10 @@ func (s *local) Update(_ context.Context, t *models.Task) error {
 	return nil
 }
 
-func (s *local) Get(_ context.Context, ID uint64) (*models.Task, error) {
+func (s *local) Get(_ context.Context, ID *uuid.UUID) (*models.Task, error) {
 	time.Sleep(time.Second)
 
-	task, ok := s.data[ID]
+	task, ok := s.data[*ID]
 	if !ok {
 		return nil, errors.Wrapf(ErrTaskNotExist, "ID: [%d]", ID)
 	}

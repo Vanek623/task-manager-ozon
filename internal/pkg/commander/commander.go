@@ -3,18 +3,19 @@ package commander
 import (
 	"context"
 	"fmt"
-	"log"
+
+	"github.com/google/uuid"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/counters"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/commander/command"
-
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/commander/command"
 )
 
 type iService interface {
-	AddTask(ctx context.Context, data *models.AddTaskData) (uint64, error)
+	AddTask(ctx context.Context, data *models.AddTaskData) (*uuid.UUID, error)
 	DeleteTask(ctx context.Context, data *models.DeleteTaskData) error
 	TasksList(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error)
 	UpdateTask(ctx context.Context, data *models.UpdateTaskData) error
@@ -25,19 +26,17 @@ type iService interface {
 type Commander struct {
 	bot     *tgbotapi.BotAPI
 	manager command.Manager
+	cs      *counters.Counters
 }
 
 // New инициализация бота
-func New(token string, s iService) (*Commander, error) {
+func New(token string, s iService, cs *counters.Counters) (*Commander, error) {
 	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
 		return nil, err
 	}
 
-	//bot.Debug = true
-	log.Printf("Authorized on acconut %s", bot.Self.UserName)
-
-	cmdr := &Commander{bot, command.NewManager(s)}
+	cmdr := &Commander{bot, command.NewManager(s), cs}
 
 	return cmdr, nil
 }
@@ -45,34 +44,31 @@ func New(token string, s iService) (*Commander, error) {
 const timeOutValue = 60
 
 // Run запуск бота
-func (cmdr *Commander) Run(ctx context.Context) error {
+func (cmdr *Commander) Run(ctx context.Context) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = timeOutValue
 	updates := cmdr.bot.GetUpdatesChan(u)
 
-	ch := make(chan error)
 	go func() {
-		for update := range updates {
-			if update.Message == nil {
-				continue
-			}
-
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, cmdr.handleMessage(ctx, update.Message))
-
-			_, err := cmdr.bot.Send(msg)
-			if err != nil {
-				ch <- errors.Wrap(err, "send tg message")
-			}
-		}
-
-		ch <- nil
+		<-ctx.Done()
+		cmdr.bot.StopReceivingUpdates()
 	}()
 
-	select {
-	case err := <-ch:
-		return err
-	case <-ctx.Done():
-		return nil
+	for update := range updates {
+		if update.Message == nil {
+			continue
+		}
+		cmdr.cs.Inc(counters.Incoming)
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, cmdr.handleMessage(ctx, update.Message))
+		log.WithField("text", msg.Text).Info("Incoming message")
+
+		_, err := cmdr.bot.Send(msg)
+		if err != nil {
+			log.Error(err)
+			cmdr.cs.Inc(counters.Fail)
+		} else {
+			cmdr.cs.Inc(counters.Success)
+		}
 	}
 }
 

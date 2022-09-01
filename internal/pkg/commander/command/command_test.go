@@ -4,10 +4,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 )
 
 func TestAddCommand_Execute(t *testing.T) {
@@ -47,9 +50,10 @@ func TestDeleteCommand_Execute(t *testing.T) {
 	t.Run("delete task from storage", func(t *testing.T) {
 		// arrange
 		f := delCommandSetUp(t)
-		f.service.EXPECT().DeleteTask(gomock.Any(), models.NewDeleteTaskData(1)).Return(nil)
+		id := uuid.New()
+		f.service.EXPECT().DeleteTask(gomock.Any(), models.NewDeleteTaskData(&id)).Return(nil)
 		// act
-		res := f.command.Execute(f.Ctx, "1")
+		res := f.command.Execute(f.Ctx, id.String())
 		// assert
 		assert.Equal(t, res, "Task deleted")
 	})
@@ -75,9 +79,10 @@ func TestDeleteCommand_Execute(t *testing.T) {
 	t.Run("doesn't delete task if has internal error", func(t *testing.T) {
 		// arrange
 		f := delCommandSetUp(t)
-		f.service.EXPECT().DeleteTask(gomock.Any(), models.NewDeleteTaskData(1)).Return(errors.New("internal error"))
+		id := uuid.New()
+		f.service.EXPECT().DeleteTask(gomock.Any(), models.NewDeleteTaskData(&id)).Return(errors.New(""))
 		// act
-		res := f.command.Execute(f.Ctx, "1")
+		res := f.command.Execute(f.Ctx, id.String())
 		// assert
 		assert.Equal(t, res, "internal error")
 	})
@@ -88,9 +93,10 @@ func TestGetCommand_Execute(t *testing.T) {
 		// arrange
 		f := getCommandSetUp(t)
 		actual := models.NewDetailedTask("test", "test", time.Now())
-		f.service.EXPECT().GetTask(gomock.Any(), models.NewGetTaskData(1)).Return(actual, nil)
+		id := uuid.New()
+		f.service.EXPECT().GetTask(gomock.Any(), models.NewGetTaskData(&id)).Return(actual, nil)
 		// act
-		res := f.command.Execute(f.Ctx, "1")
+		res := f.command.Execute(f.Ctx, id.String())
 		// assert
 		assert.Equal(t, res, actual.String())
 	})
@@ -98,9 +104,11 @@ func TestGetCommand_Execute(t *testing.T) {
 	t.Run("doesn't get task if has internal error", func(t *testing.T) {
 		// arrange
 		f := getCommandSetUp(t)
-		f.service.EXPECT().GetTask(gomock.Any(), models.NewGetTaskData(1)).Return(nil, errors.New("internal error"))
+		actual := models.NewDetailedTask("test", "test", time.Now())
+		id := uuid.New()
+		f.service.EXPECT().GetTask(gomock.Any(), models.NewGetTaskData(&id)).Return(nil, errors.New(""))
 		// act
-		res := f.command.Execute(f.Ctx, "1")
+		res := f.command.Execute(f.Ctx, id.String())
 		// assert
 		assert.Equal(t, res, "internal error")
 	})
@@ -109,8 +117,10 @@ func TestGetCommand_Execute(t *testing.T) {
 		// arrange
 		f := getCommandSetUp(t)
 		actual := models.NewDetailedTask("test", "test", time.Now())
+		id := uuid.New()
+		f.service.EXPECT().GetTask(gomock.Any(), models.NewGetTaskData(&id)).Return(nil, errors.New(""))
 		// act
-		res := f.command.Execute(f.Ctx, "a")
+		res := f.command.Execute(f.Ctx, id.String())
 		// assert
 		assert.NotEqual(t, res, actual.String())
 	})
