@@ -3,6 +3,7 @@ package async
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/google/uuid"
@@ -20,6 +21,8 @@ const (
 	topicUpdateRequestName = "income_update_request"
 	topicGetRequestName    = "income_get_request"
 	topicListRequestName   = "income_list_request"
+
+	timeout = 100 * time.Millisecond
 )
 
 type kafka struct {
@@ -53,6 +56,9 @@ func newKafka(ctx context.Context, brokers []string, cs *counters.Counters) (*ka
 func (k *kafka) send(ctx context.Context, obj []byte, topicName string) error {
 	k.cs.Inc(counters.Outbound)
 
+	ctx, cl := context.WithTimeout(ctx, timeout)
+	defer cl()
+
 	ch := make(chan error)
 	go func() {
 		var err error
@@ -68,11 +74,12 @@ func (k *kafka) send(ctx context.Context, obj []byte, topicName string) error {
 	case err := <-ch:
 		return err
 	case <-ctx.Done():
-		return ctx.Err()
+		log.Error("Request timeout")
+		return nil
 	}
 }
 
-func (k *kafka) Add(ctx context.Context, data *storageModelsPkg.AddTaskData) (*uuid.UUID, error) {
+func (k *kafka) WriteAddRequest(ctx context.Context, data *storageModelsPkg.AddTaskData) (*uuid.UUID, error) {
 	requestID := uuid.New()
 
 	tmp := struct {
@@ -101,7 +108,7 @@ func (k *kafka) Add(ctx context.Context, data *storageModelsPkg.AddTaskData) (*u
 	return &requestID, err
 }
 
-func (k *kafka) Delete(ctx context.Context, data *serviceModelsPkg.DeleteTaskData) (*uuid.UUID, error) {
+func (k *kafka) WriteDeleteRequest(ctx context.Context, data *serviceModelsPkg.DeleteTaskData) (*uuid.UUID, error) {
 	requestID := uuid.New()
 
 	tmp := struct {
@@ -127,7 +134,7 @@ func (k *kafka) Delete(ctx context.Context, data *serviceModelsPkg.DeleteTaskDat
 	return &requestID, nil
 }
 
-func (k *kafka) Update(ctx context.Context, data *serviceModelsPkg.UpdateTaskData) (*uuid.UUID, error) {
+func (k *kafka) WriteUpdateRequest(ctx context.Context, data *serviceModelsPkg.UpdateTaskData) (*uuid.UUID, error) {
 	requestID := uuid.New()
 
 	tmp := struct {
@@ -153,7 +160,7 @@ func (k *kafka) Update(ctx context.Context, data *serviceModelsPkg.UpdateTaskDat
 	return &requestID, nil
 }
 
-func (k *kafka) List(ctx context.Context, data *serviceModelsPkg.ListTaskData) (*uuid.UUID, error) {
+func (k *kafka) WriteListRequest(ctx context.Context, data *serviceModelsPkg.ListTaskData) (*uuid.UUID, error) {
 	requestID := uuid.New()
 
 	tmp := struct {
@@ -177,7 +184,7 @@ func (k *kafka) List(ctx context.Context, data *serviceModelsPkg.ListTaskData) (
 	return &requestID, nil
 }
 
-func (k *kafka) Get(ctx context.Context, data *serviceModelsPkg.GetTaskData) (*uuid.UUID, error) {
+func (k *kafka) WriteGetRequest(ctx context.Context, data *serviceModelsPkg.GetTaskData) (*uuid.UUID, error) {
 	requestID := uuid.New()
 
 	tmp := struct {
