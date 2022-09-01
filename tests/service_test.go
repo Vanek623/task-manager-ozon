@@ -13,19 +13,20 @@ import (
 )
 
 func TestService_AddTask(t *testing.T) {
-	t.Run("normal", func(t *testing.T) {
+	t.Run("request to add task", func(t *testing.T) {
 		// arrange
 		// act
-		_, err := client.TaskCreate(context.Background(), &service.TaskCreateRequest{
+		resp, err := client.TaskCreate(context.Background(), &service.TaskCreateRequest{
 			Title: "test",
 		})
 		// assert
 		assert.NoError(t, err)
+		assert.NotEqual(t, resp, 0)
 	})
 }
 
 func TestService_DelTask(t *testing.T) {
-	t.Run("normal", func(t *testing.T) {
+	t.Run("request to delete task", func(t *testing.T) {
 		// arrange
 		ctx := context.Background()
 		// act
@@ -41,7 +42,7 @@ func TestService_DelTask(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("no_task", func(t *testing.T) {
+	t.Run("doesn't delete task that has no in storage", func(t *testing.T) {
 		// arrange
 		ctx := context.Background()
 		// act
@@ -51,18 +52,18 @@ func TestService_DelTask(t *testing.T) {
 		require.NoError(t, createErr)
 
 		delRequest := &service.TaskDeleteRequest{ID: addResp.GetID()}
-		var deleteErr, secondDeleteErr error
+		var deleteErr error
 		_, deleteErr = client.TaskDelete(ctx, delRequest)
 		require.NoError(t, deleteErr)
 
-		_, secondDeleteErr = client.TaskDelete(ctx, delRequest)
+		_, deleteErr = client.TaskDelete(ctx, delRequest)
 		// assert
-		assert.Error(t, secondDeleteErr)
+		assert.Error(t, deleteErr)
 	})
 }
 
 func TestService_UpdateTask(t *testing.T) {
-	t.Run("normal", func(t *testing.T) {
+	t.Run("update task", func(t *testing.T) {
 		// arrange
 		ctx := context.Background()
 
@@ -81,7 +82,7 @@ func TestService_UpdateTask(t *testing.T) {
 		assert.NoError(t, updateErr)
 	})
 
-	t.Run("no_task", func(t *testing.T) {
+	t.Run("doesn't update task that has no in storage", func(t *testing.T) {
 		// arrange
 		ctx := context.Background()
 

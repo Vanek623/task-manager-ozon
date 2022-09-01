@@ -14,7 +14,7 @@ import (
 )
 
 func TestAddCommand_Execute(t *testing.T) {
-	t.Run("normal_full", func(t *testing.T) {
+	t.Run("add task to storage", func(t *testing.T) {
 		// arrange
 		f := addCommandSetUp(t)
 		f.service.EXPECT().AddTask(gomock.Any(), models.NewAddTaskData("test", "test")).
@@ -25,16 +25,16 @@ func TestAddCommand_Execute(t *testing.T) {
 		assert.Equal(t, res, "Task #1 added")
 	})
 
-	t.Run("no_args", func(t *testing.T) {
+	t.Run("task doesn't add if has no args", func(t *testing.T) {
 		// arrange
 		f := addCommandSetUp(t)
 		// act
 		res := f.command.Execute(f.Ctx, "")
 		// assert
-		assert.NotEqual(t, res, "Task #1 added")
+		assert.Equal(t, res, "has no enough arguments")
 	})
 
-	t.Run("internal_error", func(t *testing.T) {
+	t.Run("task doesn't add if has internal error", func(t *testing.T) {
 		// arrange
 		f := addCommandSetUp(t)
 		f.service.EXPECT().AddTask(gomock.Any(), models.NewAddTaskData("test", "test")).
@@ -42,12 +42,12 @@ func TestAddCommand_Execute(t *testing.T) {
 		// act
 		res := f.command.Execute(f.Ctx, "test test")
 		// assert
-		assert.NotEqual(t, res, "Task #1 added")
+		assert.Equal(t, res, "internal error")
 	})
 }
 
 func TestDeleteCommand_Execute(t *testing.T) {
-	t.Run("normal", func(t *testing.T) {
+	t.Run("delete task from storage", func(t *testing.T) {
 		// arrange
 		f := delCommandSetUp(t)
 		id := uuid.New()
@@ -58,16 +58,16 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		assert.Equal(t, res, "Task deleted")
 	})
 
-	t.Run("no args", func(t *testing.T) {
+	t.Run("task doesn't delete if has no args", func(t *testing.T) {
 		// arrange
 		f := delCommandSetUp(t)
 		// act
 		res := f.command.Execute(f.Ctx, "")
 		// assert
-		assert.NotEqual(t, res, "Task deleted")
+		assert.Equal(t, res, "has no enough arguments")
 	})
 
-	t.Run("incorrect id", func(t *testing.T) {
+	t.Run("doesn't delete task if args is invalid", func(t *testing.T) {
 		// arrange
 		f := delCommandSetUp(t)
 		// act
@@ -76,7 +76,7 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		assert.NotEqual(t, res, "Task deleted")
 	})
 
-	t.Run("no task", func(t *testing.T) {
+	t.Run("doesn't delete task if has internal error", func(t *testing.T) {
 		// arrange
 		f := delCommandSetUp(t)
 		id := uuid.New()
@@ -84,12 +84,12 @@ func TestDeleteCommand_Execute(t *testing.T) {
 		// act
 		res := f.command.Execute(f.Ctx, id.String())
 		// assert
-		assert.NotEqual(t, res, "Task deleted")
+		assert.Equal(t, res, "internal error")
 	})
 }
 
 func TestGetCommand_Execute(t *testing.T) {
-	t.Run("normal", func(t *testing.T) {
+	t.Run("get task form storage", func(t *testing.T) {
 		// arrange
 		f := getCommandSetUp(t)
 		actual := models.NewDetailedTask("test", "test", time.Now())
@@ -101,7 +101,7 @@ func TestGetCommand_Execute(t *testing.T) {
 		assert.Equal(t, res, actual.String())
 	})
 
-	t.Run("no_args", func(t *testing.T) {
+	t.Run("doesn't get task if has internal error", func(t *testing.T) {
 		// arrange
 		f := getCommandSetUp(t)
 		actual := models.NewDetailedTask("test", "test", time.Now())
@@ -110,10 +110,10 @@ func TestGetCommand_Execute(t *testing.T) {
 		// act
 		res := f.command.Execute(f.Ctx, id.String())
 		// assert
-		assert.NotEqual(t, res, actual.String())
+		assert.Equal(t, res, "internal error")
 	})
 
-	t.Run("internal error", func(t *testing.T) {
+	t.Run("doesn't get task if args is invalid", func(t *testing.T) {
 		// arrange
 		f := getCommandSetUp(t)
 		actual := models.NewDetailedTask("test", "test", time.Now())
