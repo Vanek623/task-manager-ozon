@@ -20,13 +20,3 @@ type Task struct {
 func (t *Task) String() string {
 	return fmt.Sprintf("%d: %s", t.ID, t.Title)
 }
-
-//// MarshalBinary создание бинарного представления
-//func (t Task) MarshalBinary() ([]byte, error) {
-//	return json.Marshal(t)
-//}
-//
-//// UnmarshalBinary создание задачи из бинарного представления
-//func (t *Task) UnmarshalBinary(data []byte) error {
-//	return json.Unmarshal(data, t)
-//}

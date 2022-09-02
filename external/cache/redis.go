@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	redisPkg "github.com/go-redis/redis/v8"
@@ -30,7 +31,12 @@ func (r *redis) WriteGetResponse(ctx context.Context, ID *uuid.UUID, task *model
 }
 
 func (r *redis) WriteListResponse(ctx context.Context, ID *uuid.UUID, tasks []*models.Task, err error) error {
-	return r.sendResponse(ctx, ID, tasks, err)
+	bytes, marshErr := json.Marshal(tasks)
+	if marshErr != nil {
+		return marshErr
+	}
+
+	return r.sendResponse(ctx, ID, bytes, err)
 }
 
 const (

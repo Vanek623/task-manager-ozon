@@ -44,7 +44,7 @@ func Run(ctx context.Context) error {
 
 	cs := counters.New("task_service")
 
-	s, err := makeService(ctx, cs, true)
+	s, err := makeService(ctx, cs, false)
 	if err != nil {
 		return err
 	}

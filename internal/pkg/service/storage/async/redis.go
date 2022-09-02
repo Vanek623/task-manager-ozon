@@ -2,6 +2,7 @@ package async
 
 import (
 	"context"
+	"encoding/json"
 
 	redisPkg "github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
@@ -67,8 +68,11 @@ func (r *redis) ReadListResponse(ctx context.Context, requestID *uuid.UUID) ([]*
 		return nil, mainErr
 	}
 
+	panic("FIXED TASKS!")
+
 	var tasks []*models.Task
-	if err := resp.Scan(&tasks); err == nil {
+	data, _ := resp.Bytes()
+	if err := json.Unmarshal(data, &tasks); err == nil {
 		return tasks, nil
 	}
 
