@@ -62,9 +62,9 @@ func (r *redis) ReadDeleteResponse(ctx context.Context, requestID *uuid.UUID) er
 }
 
 func (r *redis) ReadListResponse(ctx context.Context, requestID *uuid.UUID) ([]*models.Task, error) {
-	resp, err := r.read(ctx, requestID)
-	if err != nil {
-		return nil, err
+	resp, mainErr := r.read(ctx, requestID)
+	if mainErr != nil {
+		return nil, mainErr
 	}
 
 	var tasks []*models.Task
@@ -72,11 +72,11 @@ func (r *redis) ReadListResponse(ctx context.Context, requestID *uuid.UUID) ([]*
 		return tasks, nil
 	}
 
-	if err := resp.Scan(err); err != nil {
+	if err := resp.Scan(mainErr); err != nil {
 		return nil, err
 	}
 
-	return nil, err
+	return nil, mainErr
 }
 
 func (r *redis) ReadUpdateResponse(ctx context.Context, requestID *uuid.UUID) error {
@@ -93,9 +93,9 @@ func (r *redis) ReadUpdateResponse(ctx context.Context, requestID *uuid.UUID) er
 }
 
 func (r *redis) ReadGetResponse(ctx context.Context, requestID *uuid.UUID) (*models.DetailedTask, error) {
-	resp, err := r.read(ctx, requestID)
-	if err != nil {
-		return nil, err
+	resp, mainErr := r.read(ctx, requestID)
+	if mainErr != nil {
+		return nil, mainErr
 	}
 
 	var task *models.DetailedTask
@@ -103,11 +103,11 @@ func (r *redis) ReadGetResponse(ctx context.Context, requestID *uuid.UUID) (*mod
 		return task, nil
 	}
 
-	if err := resp.Scan(err); err != nil {
+	if err := resp.Scan(mainErr); err != nil {
 		return nil, err
 	}
 
-	return nil, err
+	return nil, mainErr
 }
 
 func (r *redis) read(ctx context.Context, requestID *uuid.UUID) (*redisPkg.StringCmd, error) {

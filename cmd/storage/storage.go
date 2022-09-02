@@ -97,10 +97,15 @@ func RunKafka(ctx context.Context, s *storagePkg.Storage, cs *counters.Counters)
 	client, err := sarama.NewConsumerGroup(cfg.Brokers, cfg.Group, saramaCfg)
 	if err != nil {
 		log.Error(err)
+		return
 	}
 
 	redisCfg := config.GetRedisConfig()
 	cw, err := cache.NewRedisWriter(ctx, &redisCfg)
+	if err != nil {
+		log.Error(err)
+		return
+	}
 
 	handler := storageAsyncApi.NewKafkaAPI(s, cs, cw)
 

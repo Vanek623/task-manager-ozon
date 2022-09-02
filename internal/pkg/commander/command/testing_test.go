@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/mocks"
+	mock_service "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/mocks"
 )
 
 type serviceFixture struct {

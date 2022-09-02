@@ -8,6 +8,7 @@ import (
 
 var redis redisPkg.Options
 
+// GetRedisConfig чтение конфигов редиса
 func GetRedisConfig() redisPkg.Options {
 	return redis
 }

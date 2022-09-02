@@ -21,6 +21,7 @@ type Writer struct {
 	iWriter
 }
 
+// NewRedisWriter создание Writer для редиса
 func NewRedisWriter(ctx context.Context, opts *redisPkg.Options) (*Writer, error) {
 	r, err := newRedis(ctx, opts)
 	if err != nil {
