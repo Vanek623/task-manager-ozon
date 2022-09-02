@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	redisPkg "github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
 	storageAsyncApi "gitlab.ozon.dev/Vanek623/task-manager-system/external/api/async"
 	storageSyncApi "gitlab.ozon.dev/Vanek623/task-manager-system/external/api/sync"
@@ -101,12 +100,7 @@ func RunKafka(ctx context.Context, s *storagePkg.Storage, cs *counters.Counters)
 	}
 
 	redisCfg := config.GetRedisConfig()
-	cw, err := cache.NewRedisWriter(ctx, &redisPkg.Options{
-		Addr:         redisCfg.Host,
-		DB:           redisCfg.DB,
-		ReadTimeout:  redisCfg.ReadTimeout,
-		WriteTimeout: redisCfg.WriteTimeout,
-	})
+	cw, err := cache.NewRedisWriter(ctx, &redisCfg)
 
 	handler := storageAsyncApi.NewKafkaAPI(s, cs, cw)
 

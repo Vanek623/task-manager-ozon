@@ -1,4 +1,4 @@
-package server
+package config
 
 // GRPC and HTTP config
 const (

@@ -14,7 +14,7 @@ type iReader interface {
 	ReadDeleteResponse(ctx context.Context, requestID *uuid.UUID) error
 	ReadListResponse(ctx context.Context, requestID *uuid.UUID) ([]*models.Task, error)
 	ReadUpdateResponse(ctx context.Context, requestID *uuid.UUID) error
-	ReadGetResponse(ctx context.Context, requestID *uuid.UUID) (*models.Task, error)
+	ReadGetResponse(ctx context.Context, requestID *uuid.UUID) (*models.DetailedTask, error)
 }
 
 var (

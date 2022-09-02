@@ -10,14 +10,17 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/server/config"
 	serviceApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/counters"
 
 	"github.com/google/uuid"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
-	serviceStorage "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage"
+	servicePkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
+
+	serviceAsyncStorage "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/async"
+	serviceSyncStorage "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/sync"
 	pb "gitlab.ozon.dev/Vanek623/task-manager-system/pkg/api/service"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -40,21 +43,11 @@ func Run(ctx context.Context) error {
 	defer cl()
 
 	cs := counters.New("task_service")
-	syncStorage, err := serviceStorage.NewGRPC(ctx, storageAddress, cs)
+
+	s, err := makeService(ctx, cs, true)
 	if err != nil {
 		return err
 	}
-
-	log.WithField("host", storageAddress).Debug("Connected to storage over GRPC")
-
-	asyncStorage, err := serviceStorage.NewKafka(ctx, brokers, syncStorage, cs)
-	if err != nil {
-		return err
-	}
-
-	log.WithField("brokers", brokers).Debug("Connected to storage over Kafka")
-
-	s := service.New(asyncStorage)
 
 	wg := sync.WaitGroup{}
 
@@ -86,9 +79,42 @@ func Run(ctx context.Context) error {
 	return nil
 }
 
+func makeService(ctx context.Context, cs *counters.Counters, isStorageSync bool) (iService, error) {
+	if isStorageSync {
+		grpcCfg := config.GetStorageGRPCConfig()
+		syncStorage, err := serviceSyncStorage.NewGRPC(ctx, grpcCfg.Host, cs)
+		if err != nil {
+			return nil, err
+		}
+
+		log.WithField("host", grpcCfg.Host).Debug("Connected to storage over GRPC")
+
+		return servicePkg.NewServiceWithSyncStorage(syncStorage), nil
+	}
+
+	kafkaCfg := config.GetKafkaConfig()
+	asyncStorageWriter, err := serviceAsyncStorage.NewKafkaWriter(ctx, kafkaCfg.Brokers, cs)
+	if err != nil {
+		return nil, err
+	}
+
+	log.WithField("brokers", kafkaCfg.Brokers).Debug("Connected to storage over Kafka")
+
+	redisCfg := config.GetRedisConfig()
+	asyncStorageReader, err := serviceAsyncStorage.NewRedisReader(ctx, &redisCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debug("Connected to redis")
+
+	return servicePkg.NewServiceWithAsyncStorage(asyncStorageWriter, asyncStorageReader), nil
+}
+
 // RunGRPC запускает GRPC
 func RunGRPC(ctx context.Context, wg *sync.WaitGroup, service iService, cs *counters.Counters) {
-	listener, err := net.Listen(connectionType, addressGRPC)
+	cfg := config.GetServiceGRPCConfig()
+	listener, err := net.Listen(cfg.ConnectionType, cfg.Host)
 	if err != nil {
 		log.Error(err)
 		return
@@ -97,7 +123,7 @@ func RunGRPC(ctx context.Context, wg *sync.WaitGroup, service iService, cs *coun
 	s := grpc.NewServer()
 	pb.RegisterServiceServer(s, serviceApiPkg.NewAPI(service, cs))
 
-	log.WithField("host", addressGRPC).Info("GRPC server up")
+	log.WithField("host", cfg.Host).Info("GRPC server up")
 
 	wg.Add(1)
 	go func() {
@@ -119,23 +145,24 @@ func RunGRPC(ctx context.Context, wg *sync.WaitGroup, service iService, cs *coun
 func RunHTTP(ctx context.Context, wg *sync.WaitGroup) {
 	gwmux := runtime.NewServeMux()
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	if err := pb.RegisterServiceHandlerFromEndpoint(ctx, gwmux, addressGRPC, opts); err != nil {
+	cfg := config.GetServiceGRPCConfig()
+	if err := pb.RegisterServiceHandlerFromEndpoint(ctx, gwmux, cfg.Host, opts); err != nil {
 		log.Error(err)
 		return
 	}
 
-	log.WithField("host", addressHTTP).Info("REST up")
+	log.WithField("host", config.HTTPAddress).Info("REST up")
 
 	mux := http.NewServeMux()
 	mux.Handle("/", gwmux)
 
-	fs := http.FileServer(http.Dir(swaggerDir))
+	fs := http.FileServer(http.Dir(config.SwaggerDir))
 	mux.Handle("/swagger/", http.StripPrefix("/swagger/", fs))
 
-	log.WithField("host", addressHTTP).Info("Swagger up")
+	log.WithField("host", config.HTTPAddress).Info("Swagger up")
 
 	serv := http.Server{
-		Addr:              addressHTTP,
+		Addr:              config.HTTPAddress,
 		Handler:           mux,
 		ReadHeaderTimeout: time.Second,
 	}
