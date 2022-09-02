@@ -8,11 +8,14 @@ import (
 	"sync"
 	"time"
 
+	redisPkg "github.com/go-redis/redis/v8"
 	log "github.com/sirupsen/logrus"
+	storageAsyncApi "gitlab.ozon.dev/Vanek623/task-manager-system/external/api/async"
+	storageSyncApi "gitlab.ozon.dev/Vanek623/task-manager-system/external/api/sync"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/cache"
 
 	"github.com/Shopify/sarama"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/storage/config"
-	storageApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/external/api"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 
 	storagePkg "gitlab.ozon.dev/Vanek623/task-manager-system/external/task/storage"
@@ -72,7 +75,7 @@ func RunGRPC(ctx context.Context, wg *sync.WaitGroup, s *storagePkg.Storage, cs 
 
 	server := grpc.NewServer()
 
-	pb.RegisterStorageServer(server, storageApiPkg.NewProtobufAPI(s, cs))
+	pb.RegisterStorageServer(server, storageSyncApi.NewProtobufAPI(s, cs))
 
 	wg.Add(1)
 	go func() {
@@ -97,7 +100,15 @@ func RunKafka(ctx context.Context, s *storagePkg.Storage, cs *counters.Counters)
 		log.Error(err)
 	}
 
-	handler := storageApiPkg.NewKafkaAPI(s, cs)
+	redisCfg := config.GetRedisConfig()
+	cw, err := cache.NewRedisWriter(ctx, &redisPkg.Options{
+		Addr:         redisCfg.Host,
+		DB:           redisCfg.DB,
+		ReadTimeout:  redisCfg.ReadTimeout,
+		WriteTimeout: redisCfg.WriteTimeout,
+	})
+
+	handler := storageAsyncApi.NewKafkaAPI(s, cs, cw)
 
 	log.WithFields(log.Fields{
 		"brokers": cfg.Brokers,

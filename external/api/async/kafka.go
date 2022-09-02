@@ -1,16 +1,13 @@
-package api
+package async
 
 import (
 	"context"
 	"encoding/json"
-	"time"
-
-	"github.com/go-redis/redis/v8"
-	log "github.com/sirupsen/logrus"
 
 	"github.com/Shopify/sarama"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/counters"
 
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
@@ -20,21 +17,29 @@ const (
 	topicAddRequestName    = "income_add_request"
 	topicDeleteRequestName = "income_delete_request"
 	topicUpdateRequestName = "income_update_request"
-
-	expiration = time.Minute
+	topicGetRequestName    = "income_get_request"
+	topicListRequestName   = "income_list_request"
 )
+
+type iCacheWriter interface {
+	WriteAddResponse(ctx context.Context, ID *uuid.UUID, err error) error
+	WriteDeleteResponse(ctx context.Context, ID *uuid.UUID, err error) error
+	WriteUpdateResponse(ctx context.Context, ID *uuid.UUID, err error) error
+	WriteGetResponse(ctx context.Context, ID *uuid.UUID, task *models.Task, err error) error
+	WriteListResponse(ctx context.Context, ID *uuid.UUID, tasks []*models.Task, err error) error
+}
 
 type kafka struct {
 	storage iTaskStorage
 	cs      *counters.Counters
-	rc      *redis.Client
+	cw      iCacheWriter
 }
 
-func newKafka(storage iTaskStorage, cs *counters.Counters, client *redis.Client) *kafka {
+func newKafka(storage iTaskStorage, cs *counters.Counters, writer iCacheWriter) *kafka {
 	return &kafka{
 		storage: storage,
 		cs:      cs,
-		rc:      client,
+		cw:      writer,
 	}
 }
 
@@ -83,117 +88,103 @@ func (k *kafka) handleMessage(ctx context.Context, msg *sarama.ConsumerMessage) 
 		return k.deleteTask(ctx, msg.Value)
 	case topicUpdateRequestName:
 		return k.updateTask(ctx, msg.Value)
+	case topicGetRequestName:
+		return k.getTask(ctx, msg.Value)
+	case topicListRequestName:
+		return k.listTasks(ctx, msg.Value)
 	default:
 		return errors.Errorf("unknown topic - %s", msg.Topic)
 	}
 }
 
 func (k *kafka) addTask(ctx context.Context, data []byte) error {
-	obj := struct {
+	req := struct {
+		RequestID   uuid.UUID
 		ID          uuid.UUID
 		Title       string
 		Description string
 	}{}
 
-	err := json.Unmarshal(data, &obj)
+	err := json.Unmarshal(data, &req)
 	if err != nil {
 		return err
 	}
 
 	err = k.storage.Add(ctx, &models.Task{
-		ID:          obj.ID,
-		Title:       obj.Title,
-		Description: obj.Description,
+		ID:          req.ID,
+		Title:       req.Title,
+		Description: req.Description,
 	})
 
-	return err
+	return k.cw.WriteAddResponse(ctx, &req.RequestID, err)
 }
 
 func (k *kafka) deleteTask(ctx context.Context, data []byte) error {
-	obj := struct {
-		ID uuid.UUID
+	req := struct {
+		RequestID uuid.UUID
+		ID        uuid.UUID
 	}{}
 
-	err := json.Unmarshal(data, &obj)
+	err := json.Unmarshal(data, &req)
 	if err != nil {
 		return err
 	}
 
-	err = k.storage.Delete(ctx, &obj.ID)
+	err = k.storage.Delete(ctx, &req.ID)
 
-	return err
+	return k.cw.WriteDeleteResponse(ctx, &req.RequestID, err)
 }
 
 func (k *kafka) updateTask(ctx context.Context, data []byte) error {
-	obj := struct {
+	req := struct {
+		RequestID   uuid.UUID
 		ID          uuid.UUID
 		Title       string
 		Description string
 	}{}
 
-	err := json.Unmarshal(data, &obj)
+	err := json.Unmarshal(data, &req)
 	if err != nil {
 		return err
 	}
 
 	err = k.storage.Update(ctx, &models.Task{
-		ID:          obj.ID,
-		Title:       obj.Title,
-		Description: obj.Description,
+		ID:          req.ID,
+		Title:       req.Title,
+		Description: req.Description,
 	})
 
-	return err
+	return k.cw.WriteUpdateResponse(ctx, &req.RequestID, err)
 }
 
 func (k *kafka) getTask(ctx context.Context, data []byte) error {
-	obj := struct {
+	req := struct {
 		RequestID uuid.UUID
 		ID        uuid.UUID
 	}{}
 
-	err := json.Unmarshal(data, &obj)
+	err := json.Unmarshal(data, &req)
 	if err != nil {
 		return err
 	}
 
-	resp, err := json.Marshal(tasks)
-	if err != nil {
-		return err
-	}
+	task, err := k.storage.Get(ctx, &req.ID)
 
-	_, err = k.rc.Set(ctx, obj.RequestID.String(), resp, expiration).Result()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return k.cw.WriteGetResponse(ctx, &req.RequestID, task, err)
 }
 
 func (k *kafka) listTasks(ctx context.Context, data []byte) error {
-	obj := struct {
+	req := struct {
 		RequestID     uuid.UUID
 		Limit, Offset uint64
 	}{}
 
-	err := json.Unmarshal(data, &obj)
+	err := json.Unmarshal(data, &req)
 	if err != nil {
 		return err
 	}
 
-	tasks, err := k.storage.List(ctx, obj.Limit, obj.Offset)
-	if err != nil {
-		return err
-	}
+	tasks, err := k.storage.List(ctx, req.Limit, req.Offset)
 
-	resp, err := json.Marshal(tasks)
-	if err != nil {
-		return err
-	}
-
-	_, err = k.rc.Set(ctx, obj.RequestID.String(), resp, expiration).Result()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return k.cw.WriteListResponse(ctx, &req.RequestID, tasks, err)
 }
