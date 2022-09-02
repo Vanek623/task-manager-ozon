@@ -10,7 +10,7 @@ import (
 )
 
 type iReader interface {
-	ReadAddResponse(ctx context.Context, requestID *uuid.UUID) (*uuid.UUID, error)
+	ReadAddResponse(ctx context.Context, requestID *uuid.UUID) error
 	ReadDeleteResponse(ctx context.Context, requestID *uuid.UUID) error
 	ReadListResponse(ctx context.Context, requestID *uuid.UUID) ([]*models.Task, error)
 	ReadUpdateResponse(ctx context.Context, requestID *uuid.UUID) error
@@ -20,8 +20,6 @@ type iReader interface {
 var (
 	// ErrNoExistID ошибка отсутствия ключа в хранилище
 	ErrNoExistID = errors.New("has no such key")
-	// ErrParse ошибка разбора ответа
-	ErrParse = errors.New("cannot parse message")
 )
 
 // Reader читалка KV хранилища

@@ -5,12 +5,12 @@
 package mock_service
 
 import (
-	context "context"
-	reflect "reflect"
+	"context"
+	"reflect"
 
-	gomock "github.com/golang/mock/gomock"
-	uuid "github.com/google/uuid"
-	models "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+	"github.com/golang/mock/gomock"
+	"github.com/google/uuid"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 	models0 "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/storage/models"
 )
 
