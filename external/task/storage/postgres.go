@@ -80,5 +80,7 @@ func (p *postgres) Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error)
 		return nil, err
 	}
 
+	log.WithField("task", task).Debug("Postgres got")
+
 	return &task, nil
 }

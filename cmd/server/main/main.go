@@ -17,7 +17,7 @@ import (
 const envPath = "/home/ivan/GolandProjects/TaskBot/bin/.env"
 
 func main() {
-	log.SetLevel(log.InfoLevel)
+	log.SetLevel(log.DebugLevel)
 	log.SetOutput(os.Stdout)
 
 	if err := godotenv.Load(envPath); err != nil {

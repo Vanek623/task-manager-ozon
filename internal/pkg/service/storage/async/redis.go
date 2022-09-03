@@ -3,10 +3,10 @@ package async
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	redisPkg "github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
 )
@@ -14,6 +14,19 @@ import (
 type redis struct {
 	iReader
 	client *redisPkg.Client
+}
+
+type dto struct {
+	Data []byte
+	Err  error
+}
+
+type storageTask struct {
+	ID          uuid.UUID `json:"id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	Created     time.Time `json:"created"`
+	Edited      time.Time `json:"edited"`
 }
 
 func newRedis(ctx context.Context, opts *redisPkg.Options) (r *redis, err error) {
@@ -37,92 +50,83 @@ func newRedis(ctx context.Context, opts *redisPkg.Options) (r *redis, err error)
 }
 
 func (r *redis) ReadAddResponse(ctx context.Context, requestID *uuid.UUID) error {
-	resp, err := r.read(ctx, requestID)
+	_, err := r.read(ctx, requestID)
 	if err != nil {
 		return err
-	}
-
-	if str := resp.String(); str != "" {
-		return errors.New(str)
 	}
 
 	return nil
 }
 
 func (r *redis) ReadDeleteResponse(ctx context.Context, requestID *uuid.UUID) error {
-	resp, err := r.read(ctx, requestID)
+	_, err := r.read(ctx, requestID)
 	if err != nil {
 		return err
-	}
-
-	if str := resp.String(); str != "" {
-		return errors.New(str)
 	}
 
 	return nil
 }
 
 func (r *redis) ReadListResponse(ctx context.Context, requestID *uuid.UUID) ([]*models.Task, error) {
-	resp, mainErr := r.read(ctx, requestID)
-	if mainErr != nil {
-		return nil, mainErr
-	}
-
-	panic("FIXED TASKS!")
-
-	var tasks []*models.Task
-	data, _ := resp.Bytes()
-	if err := json.Unmarshal(data, &tasks); err == nil {
-		return tasks, nil
-	}
-
-	if err := resp.Scan(mainErr); err != nil {
+	resp, err := r.read(ctx, requestID)
+	if err != nil {
 		return nil, err
 	}
 
-	return nil, mainErr
+	var tmp []*storageTask
+	if err = json.Unmarshal(resp, &tmp); err != nil {
+		return nil, err
+	}
+
+	tasks := make([]*models.Task, 0, len(tmp))
+	for _, t := range tmp {
+		tasks = append(tasks, models.NewTask(&t.ID, t.Title))
+	}
+
+	return tasks, nil
 }
 
 func (r *redis) ReadUpdateResponse(ctx context.Context, requestID *uuid.UUID) error {
-	resp, err := r.read(ctx, requestID)
+	_, err := r.read(ctx, requestID)
 	if err != nil {
 		return err
-	}
-
-	if str := resp.String(); str != "" {
-		return errors.New(str)
 	}
 
 	return nil
 }
 
 func (r *redis) ReadGetResponse(ctx context.Context, requestID *uuid.UUID) (*models.DetailedTask, error) {
-	resp, mainErr := r.read(ctx, requestID)
-	if mainErr != nil {
-		return nil, mainErr
-	}
-
-	var task *models.DetailedTask
-	if err := resp.Scan(task); err == nil {
-		return task, nil
-	}
-
-	if err := resp.Scan(mainErr); err != nil {
+	resp, err := r.read(ctx, requestID)
+	if err != nil {
 		return nil, err
 	}
 
-	return nil, mainErr
+	var tmp storageTask
+	if err = json.Unmarshal(resp, &tmp); err != nil {
+		return nil, err
+	}
+
+	log.WithField("task", tmp).Debug("Read from redis")
+
+	return models.NewDetailedTask(tmp.Title, tmp.Description, tmp.Edited), nil
 }
 
-func (r *redis) read(ctx context.Context, requestID *uuid.UUID) (*redisPkg.StringCmd, error) {
+func (r *redis) read(ctx context.Context, requestID *uuid.UUID) ([]byte, error) {
 	res := r.client.GetDel(ctx, requestID.String())
-	if err := res.Err(); err == nil {
-		return res, nil
-	} else if err == redisPkg.Nil {
+	if err := res.Err(); err == redisPkg.Nil {
 		return nil, ErrNoExistID
 	} else if err != nil {
 		return nil, err
 	}
 
-	return res, nil
+	bytes, _ := res.Bytes()
+	var tmp dto
+	if err := json.Unmarshal(bytes, &tmp); err != nil {
+		return nil, err
+	}
+	if tmp.Err != nil {
+		return nil, tmp.Err
+	}
+
+	return tmp.Data, nil
 }

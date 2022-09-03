@@ -7,6 +7,7 @@ import (
 
 	redisPkg "github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 )
 
@@ -27,7 +28,14 @@ func (r *redis) WriteUpdateResponse(ctx context.Context, ID *uuid.UUID, err erro
 }
 
 func (r *redis) WriteGetResponse(ctx context.Context, ID *uuid.UUID, task *models.Task, err error) error {
-	return r.sendResponse(ctx, ID, task, err)
+	bytes, marshErr := json.Marshal(task)
+	if marshErr != nil {
+		return marshErr
+	}
+
+	log.WithField("task", task).Debug("Write to redis")
+
+	return r.sendResponse(ctx, ID, bytes, err)
 }
 
 func (r *redis) WriteListResponse(ctx context.Context, ID *uuid.UUID, tasks []*models.Task, err error) error {
@@ -41,7 +49,6 @@ func (r *redis) WriteListResponse(ctx context.Context, ID *uuid.UUID, tasks []*m
 
 const (
 	connectTimeout    = 5 * time.Second
-	writeTimeout      = 100 * time.Millisecond
 	expirationTimeout = time.Second
 )
 
@@ -57,16 +64,27 @@ func newRedis(ctx context.Context, opts *redisPkg.Options) (*redis, error) {
 	return &redis{c: client}, nil
 }
 
-func (r *redis) sendResponse(ctx context.Context, ID *uuid.UUID, data interface{}, prevErr error) error {
-	if prevErr != nil {
-		data = prevErr
+type dto struct {
+	Data []byte
+	Err  error
+}
+
+func (r *redis) sendResponse(ctx context.Context, ID *uuid.UUID, data []byte, err error) error {
+	d := dto{}
+	if err != nil {
+		d.Err = err
+	} else {
+		d.Data = data
 	}
 
-	writeCtx, cl := context.WithTimeout(ctx, writeTimeout)
-	defer cl()
-	if _, err := r.c.Set(writeCtx, ID.String(), data, expirationTimeout).Result(); err != nil {
+	resp, err := json.Marshal(d)
+	if err != nil {
 		return err
 	}
 
-	return prevErr
+	if _, err = r.c.Set(ctx, ID.String(), resp, expirationTimeout).Result(); err != nil {
+		return err
+	}
+
+	return nil
 }
