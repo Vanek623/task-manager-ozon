@@ -8,10 +8,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	storageAsyncApi "gitlab.ozon.dev/Vanek623/task-manager-system/external/api/async"
 	storageSyncApi "gitlab.ozon.dev/Vanek623/task-manager-system/external/api/sync"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/external/cache"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/external/task/models"
 
 	"github.com/Shopify/sarama"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/storage/config"
@@ -25,45 +27,62 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Run запуск сервиса хранилища
-func Run(ctx context.Context) error {
-	ctx, cl := context.WithCancel(ctx)
-	defer cl()
+type iTaskStorage interface {
+	Add(ctx context.Context, t *models.Task) error
+	Delete(ctx context.Context, ID *uuid.UUID) error
+	List(ctx context.Context, limit, offset uint64) ([]*models.Task, error)
+	Update(ctx context.Context, t *models.Task) error
+	Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error)
+}
 
-	cs := counters.New("storage_service")
+type Server struct {
+	wg  *sync.WaitGroup
+	cs  *counters.Counters
+	ctx context.Context
 
-	var wg sync.WaitGroup
-	storage, err := RunDB(ctx, &wg, cs)
-	if err != nil {
-		return err
+	s iTaskStorage
+}
+
+func NewServer(ctx context.Context) (*Server, error) {
+	s := &Server{
+		wg:  &sync.WaitGroup{},
+		cs:  counters.New("storage_service"),
+		ctx: ctx,
 	}
 
-	wg.Add(1)
+	if err := s.runDB(); err != nil {
+		return nil, err
+	}
+
+	return s, nil
+}
+
+// Run запуск сервиса хранилища
+func (s *Server) Run() {
+	s.wg.Add(1)
 	go func() {
-		defer wg.Done()
-		RunGRPC(ctx, &wg, storage, cs)
+		defer s.wg.Done()
+		s.RunGRPC()
 	}()
 
-	wg.Add(1)
+	s.wg.Add(1)
 	go func() {
-		defer wg.Done()
-		RunKafka(ctx, storage, cs)
+		defer s.wg.Done()
+		s.RunKafka()
 	}()
 
-	wg.Add(1)
+	s.wg.Add(1)
 	go func() {
-		defer wg.Done()
-		RunHTTP(ctx, &wg)
+		defer s.wg.Done()
+		s.RunHTTP()
 	}()
 
-	wg.Wait()
-
-	return nil
+	s.wg.Wait()
 }
 
 // RunGRPC запуск GRPC
-func RunGRPC(ctx context.Context, wg *sync.WaitGroup, s *storagePkg.Storage, cs *counters.Counters) {
-	ctx, cl := context.WithCancel(ctx)
+func (s *Server) RunGRPC() {
+	ctx, cl := context.WithCancel(s.ctx)
 	defer cl()
 
 	cfg := config.GetConfigGRPC()
@@ -74,11 +93,11 @@ func RunGRPC(ctx context.Context, wg *sync.WaitGroup, s *storagePkg.Storage, cs 
 
 	server := grpc.NewServer()
 
-	pb.RegisterStorageServer(server, storageSyncApi.NewProtobufAPI(s, cs))
+	pb.RegisterStorageServer(server, storageSyncApi.NewProtobufAPI(s.s, s.cs))
 
-	wg.Add(1)
+	s.wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer s.wg.Done()
 		<-ctx.Done()
 		server.Stop()
 		log.Info("Kafka down")
@@ -90,7 +109,7 @@ func RunGRPC(ctx context.Context, wg *sync.WaitGroup, s *storagePkg.Storage, cs 
 }
 
 // RunKafka запуск Kafka
-func RunKafka(ctx context.Context, s *storagePkg.Storage, cs *counters.Counters) {
+func (s *Server) RunKafka() {
 	cfg := config.GetConfigKafka()
 
 	saramaCfg := sarama.NewConfig()
@@ -101,13 +120,13 @@ func RunKafka(ctx context.Context, s *storagePkg.Storage, cs *counters.Counters)
 	}
 
 	redisCfg := config.GetRedisConfig()
-	cw, err := cache.NewRedisWriter(ctx, &redisCfg)
+	cw, err := cache.NewRedisWriter(s.ctx, &redisCfg)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	handler := storageAsyncApi.NewKafkaAPI(s, cs, cw)
+	handler := storageAsyncApi.NewKafkaAPI(s.s, s.cs, cw)
 
 	log.WithFields(log.Fields{
 		"brokers": cfg.Brokers,
@@ -116,7 +135,7 @@ func RunKafka(ctx context.Context, s *storagePkg.Storage, cs *counters.Counters)
 
 	for {
 		select {
-		case <-ctx.Done():
+		case <-s.ctx.Done():
 			log.Info("Stop kafka")
 			if err := client.Close(); err != nil {
 				log.Error(err)
@@ -125,24 +144,24 @@ func RunKafka(ctx context.Context, s *storagePkg.Storage, cs *counters.Counters)
 		default:
 		}
 
-		if err := client.Consume(ctx, cfg.Topics, handler); err != nil {
+		if err := client.Consume(s.ctx, cfg.Topics, handler); err != nil {
 			log.WithField("error", err).Error("Consuming")
 			time.Sleep(time.Second * 5)
 		}
 	}
 }
 
-func connectToDB(ctx context.Context, wg *sync.WaitGroup) (*pgxpool.Pool, error) {
+func (s *Server) connectToDB() (*pgxpool.Pool, error) {
 	cfg := config.GetConfigDB()
 	psqlConn := fmt.Sprintf("host=%s port=%s user=%s password=%s "+
 		"dbname=%s sslmode=disable", cfg.Host, cfg.Port, cfg.UserName, cfg.Password, cfg.Name)
 
-	pool, err := pgxpool.Connect(ctx, psqlConn)
+	pool, err := pgxpool.Connect(s.ctx, psqlConn)
 	if err != nil {
 		return nil, errors.Wrap(err, "can't connect to database")
 	}
 
-	if err = pool.Ping(ctx); err != nil {
+	if err = pool.Ping(s.ctx); err != nil {
 		pool.Close()
 		return nil, err
 	}
@@ -158,44 +177,44 @@ func connectToDB(ctx context.Context, wg *sync.WaitGroup) (*pgxpool.Pool, error)
 		"port": cfg.Port,
 	}).Info("Connected to storage")
 
-	wg.Add(1)
+	s.wg.Add(1)
 	go func() {
-		<-ctx.Done()
+		defer s.wg.Done()
+		<-s.ctx.Done()
 		pool.Close()
 		log.Info("DB connection down")
-		wg.Done()
 	}()
 
 	return pool, nil
 }
 
-// RunDB поднятие БД
-func RunDB(ctx context.Context, wg *sync.WaitGroup, cs *counters.Counters) (*storagePkg.Storage, error) {
-	pool, err := connectToDB(ctx, wg)
+// runDB поднятие БД
+func (s *Server) runDB() error {
+	pool, err := s.connectToDB()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	pg := storagePkg.NewPostgres(pool, cs, false)
-	storage, err := storagePkg.NewMemcached(pg, cs, config.MemcachedHost)
+	pg := storagePkg.NewPostgres(pool, s.cs, false)
+	s.s, err = storagePkg.NewMemcached(pg, s.cs, config.MemcachedHost)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return storage, nil
+	return nil
 }
 
 // RunHTTP запуск HTTP сервера (счетчики)
-func RunHTTP(ctx context.Context, wg *sync.WaitGroup) {
+func (s *Server) RunHTTP() {
 	serv := http.Server{
 		Addr:              config.HTTPHost,
 		ReadHeaderTimeout: time.Second,
 	}
 
-	wg.Add(1)
+	s.wg.Add(1)
 	go func() {
-		defer wg.Done()
-		<-ctx.Done()
+		defer s.wg.Done()
+		<-s.ctx.Done()
 
 		if err := serv.Shutdown(context.Background()); err != nil {
 			log.Error(err)

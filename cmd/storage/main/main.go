@@ -21,14 +21,16 @@ func main() {
 
 	go func() {
 		<-sig
-		log.Info("Shooting down storage...")
+		log.Info("Shooting down storage server...")
 		cancel()
 	}()
 
-	if err := storage.Run(ctx); err != nil {
-		cancel()
-		log.Error(err)
+	srv, err := storage.NewServer(ctx)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	log.Info("Storage shutdown")
+	srv.Run()
+
+	log.Info("Storage server shutdown")
 }

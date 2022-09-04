@@ -7,7 +7,7 @@ import (
 	clientPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/client"
 )
 
-var client *clientPkg.Client
+var client *clientPkg.ServiceClient
 
 func init() {
 	const host = "localhost:8081"

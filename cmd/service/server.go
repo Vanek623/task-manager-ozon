@@ -1,4 +1,4 @@
-package server
+package service
 
 import (
 	"context"
@@ -7,15 +7,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/bot"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/server/config"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/service/config"
 	serviceApiPkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/api"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/counters"
-
-	"github.com/google/uuid"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/client"
 	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service/models"
+	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/tracer"
+	"go.opentelemetry.io/otel"
 
 	servicePkg "gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/service"
 
@@ -37,65 +39,79 @@ type iService interface {
 	GetTask(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error)
 }
 
-// Run запуск Kafka&GRPC, REST and Tg Bot
-func Run(ctx context.Context) error {
-	ctx, cl := context.WithCancel(ctx)
-	defer cl()
+type Server struct {
+	cs  *counters.Counters
+	wg  *sync.WaitGroup
+	ctx context.Context
 
-	cs := counters.New("task_service")
+	s iService
+}
 
-	s, err := makeService(ctx, cs, false)
-	if err != nil {
-		return err
+func NewServer(ctx context.Context) (*Server, error) {
+	srv := &Server{
+		cs:  counters.New("task_service"),
+		wg:  &sync.WaitGroup{},
+		ctx: ctx,
 	}
 
-	wg := sync.WaitGroup{}
+	if err := srv.makeService(ctx, false); err != nil {
+		return nil, err
+	}
 
-	wg.Add(1)
+	return srv, nil
+}
+
+// Run запуск Kafka&GRPC, REST and Tg Bot
+func (s *Server) Run() {
+	s.wg.Add(1)
 	go func() {
-		defer wg.Done()
-		RunHTTP(ctx, &wg)
+		defer s.wg.Done()
+		s.RunHTTP()
 		log.Info("HTTP down")
 	}()
 
-	wg.Add(1)
+	s.wg.Add(1)
 	go func() {
-		defer wg.Done()
-		bot.Run(ctx, s, cs)
+		defer s.wg.Done()
+		pbClient, err := client.New(config.GetServiceGRPCConfig().Host, 1)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		bot.Run(s.ctx, pbClient, s.cs)
 		log.Info("Bot down")
 	}()
 
-	wg.Add(1)
+	s.wg.Add(1)
 	go func() {
-		defer wg.Done()
-		RunGRPC(ctx, &wg, s, cs)
+		defer s.wg.Done()
+		s.RunGRPC()
 		log.Info("GRPC down")
 	}()
 
-	wg.Wait()
+	s.wg.Wait()
 
 	log.Info("Server down")
-
-	return nil
 }
 
-func makeService(ctx context.Context, cs *counters.Counters, isStorageSync bool) (iService, error) {
+func (s *Server) makeService(ctx context.Context, isStorageSync bool) error {
 	if isStorageSync {
 		grpcCfg := config.GetStorageGRPCConfig()
-		syncStorage, err := serviceSyncStorage.NewGRPC(ctx, grpcCfg.Host, cs)
+		syncStorage, err := serviceSyncStorage.NewGRPC(ctx, grpcCfg.Host, s.cs)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		log.WithField("host", grpcCfg.Host).Debug("Connected to storage over GRPC")
-
-		return servicePkg.NewServiceWithSyncStorage(syncStorage), nil
+		s.s = servicePkg.NewServiceWithSyncStorage(syncStorage)
+		return nil
 	}
 
 	kafkaCfg := config.GetKafkaConfig()
-	asyncStorageWriter, err := serviceAsyncStorage.NewKafkaWriter(ctx, kafkaCfg.Brokers, cs)
+	asyncStorageWriter, err := serviceAsyncStorage.NewKafkaWriter(ctx, kafkaCfg.Brokers, s.cs)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	log.WithField("brokers", kafkaCfg.Brokers).Debug("Connected to storage over Kafka")
@@ -103,36 +119,53 @@ func makeService(ctx context.Context, cs *counters.Counters, isStorageSync bool)
 	redisCfg := config.GetRedisConfig()
 	asyncStorageReader, err := serviceAsyncStorage.NewRedisReader(ctx, &redisCfg)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	log.Debug("Connected to redis")
 
-	return servicePkg.NewServiceWithAsyncStorage(asyncStorageWriter, asyncStorageReader), nil
+	s.s = servicePkg.NewServiceWithAsyncStorage(asyncStorageWriter, asyncStorageReader)
+
+	return nil
+}
+
+func (s *Server) MonitoringInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	s.cs.Inc(counters.Incoming)
+
+	newCtx, span := otel.Tracer(tracer.Name).Start(ctx, tracer.MakeSpanName(info.FullMethod))
+	defer span.End()
+
+	res, err := handler(newCtx, req)
+	if err != nil {
+		s.cs.Inc(counters.Fail)
+		return nil, err
+	}
+
+	s.cs.Inc(counters.Success)
+	return res, nil
 }
 
 // RunGRPC запускает GRPC
-func RunGRPC(ctx context.Context, wg *sync.WaitGroup, service iService, cs *counters.Counters) {
+func (s *Server) RunGRPC() {
 	cfg := config.GetServiceGRPCConfig()
 	listener, err := net.Listen(cfg.ConnectionType, cfg.Host)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-
-	s := grpc.NewServer()
-	pb.RegisterServiceServer(s, serviceApiPkg.NewAPI(service, cs))
+	grpcS := grpc.NewServer(grpc.UnaryInterceptor(s.MonitoringInterceptor))
+	pb.RegisterServiceServer(grpcS, serviceApiPkg.NewAPI(s.s, s.cs))
 
 	log.WithField("host", cfg.Host).Info("GRPC server up")
 
-	wg.Add(1)
+	s.wg.Add(1)
 	go func() {
-		defer wg.Done()
-		<-ctx.Done()
-		s.Stop()
+		defer s.wg.Done()
+		<-s.ctx.Done()
+		grpcS.Stop()
 	}()
 
-	if err = s.Serve(listener); err != nil {
+	if err = grpcS.Serve(listener); err != nil {
 		if errors.Is(err, grpc.ErrServerStopped) {
 			log.Info(err)
 		} else {
@@ -142,11 +175,12 @@ func RunGRPC(ctx context.Context, wg *sync.WaitGroup, service iService, cs *coun
 }
 
 // RunHTTP запускает REST и swagger
-func RunHTTP(ctx context.Context, wg *sync.WaitGroup) {
+func (s *Server) RunHTTP() {
 	gwmux := runtime.NewServeMux()
+
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	cfg := config.GetServiceGRPCConfig()
-	if err := pb.RegisterServiceHandlerFromEndpoint(ctx, gwmux, cfg.Host, opts); err != nil {
+	if err := pb.RegisterServiceHandlerFromEndpoint(s.ctx, gwmux, cfg.Host, opts); err != nil {
 		log.Error(err)
 		return
 	}
@@ -167,10 +201,10 @@ func RunHTTP(ctx context.Context, wg *sync.WaitGroup) {
 		ReadHeaderTimeout: time.Second,
 	}
 
-	wg.Add(1)
+	s.wg.Add(1)
 	go func() {
-		defer wg.Done()
-		<-ctx.Done()
+		defer s.wg.Done()
+		<-s.ctx.Done()
 		if err := serv.Shutdown(context.Background()); err != nil {
 			log.Error(err)
 		}

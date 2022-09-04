@@ -44,12 +44,14 @@ func newKafka(storage iTaskStorage, cs *counters.Counters, writer iCacheWriter) 
 }
 
 // Setup старт сессии
-func (k *kafka) Setup(_ sarama.ConsumerGroupSession) error {
+func (k *kafka) Setup(s sarama.ConsumerGroupSession) error {
+	log.Debug("Session started")
 	return nil
 }
 
 // Cleanup конец сессии
 func (k *kafka) Cleanup(_ sarama.ConsumerGroupSession) error {
+	log.Debug("Session done")
 	return nil
 }
 
@@ -58,7 +60,6 @@ func (k *kafka) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.C
 	for {
 		select {
 		case <-session.Context().Done():
-			log.Info("Session done")
 			return nil
 		case msg, ok := <-claim.Messages():
 			if !ok {

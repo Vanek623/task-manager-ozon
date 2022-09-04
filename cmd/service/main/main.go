@@ -6,12 +6,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	log "github.com/sirupsen/logrus"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/internal/pkg/tracer"
-	"go.opentelemetry.io/otel"
-
 	"github.com/joho/godotenv"
-	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/server"
+	log "github.com/sirupsen/logrus"
+
+	"gitlab.ozon.dev/Vanek623/task-manager-system/cmd/service"
 )
 
 const envPath = "/home/ivan/GolandProjects/TaskBot/bin/.env"
@@ -35,11 +33,10 @@ func main() {
 		cancel()
 	}()
 
-	newCtx, span := otel.Tracer(tracer.Name).Start(ctx, tracer.MakeSpanName("main"))
-	defer span.End()
-
-	if err := server.Run(newCtx); err != nil {
-		cancel()
-		log.Error(err)
+	srv, err := service.NewServer(ctx)
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	srv.Run()
 }
