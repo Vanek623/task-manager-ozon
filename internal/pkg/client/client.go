@@ -24,13 +24,14 @@ type iService interface {
 	GetTask(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error)
 }
 
-// ServiceClient структура клиента сервиса
+// ServiceClient структура клиента сервиса (GRPC)
 type ServiceClient struct {
 	iService
 	client pb.ServiceClient
 	id     uint
 }
 
+// AddTask добавить задачу
 func (c *ServiceClient) AddTask(ctx context.Context, data *models.AddTaskData) (*uuid.UUID, error) {
 	req := &pb.TaskCreateRequest{
 		Title:       data.Title(),
@@ -50,6 +51,7 @@ func (c *ServiceClient) AddTask(ctx context.Context, data *models.AddTaskData) (
 	return &id, nil
 }
 
+// DeleteTask удалить  задачу
 func (c *ServiceClient) DeleteTask(ctx context.Context, data *models.DeleteTaskData) error {
 	bytes, err := data.ID().MarshalBinary()
 	if err != nil {
@@ -66,6 +68,7 @@ func (c *ServiceClient) DeleteTask(ctx context.Context, data *models.DeleteTaskD
 	return nil
 }
 
+// TasksList получить список задач
 func (c *ServiceClient) TasksList(ctx context.Context, data *models.ListTaskData) ([]*models.Task, error) {
 	req := &pb.TaskListRequest{
 		Limit:  data.Limit(),
@@ -91,6 +94,7 @@ func (c *ServiceClient) TasksList(ctx context.Context, data *models.ListTaskData
 	return tasks, nil
 }
 
+// UpdateTask обновить задачу
 func (c *ServiceClient) UpdateTask(ctx context.Context, data *models.UpdateTaskData) error {
 	id, err := data.ID().MarshalBinary()
 	if err != nil {
@@ -113,6 +117,7 @@ func (c *ServiceClient) UpdateTask(ctx context.Context, data *models.UpdateTaskD
 	return nil
 }
 
+// GetTask получить детали задачи
 func (c *ServiceClient) GetTask(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error) {
 	id, err := data.ID().MarshalBinary()
 	if err != nil {

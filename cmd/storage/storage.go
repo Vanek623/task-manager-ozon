@@ -35,6 +35,7 @@ type iTaskStorage interface {
 	Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error)
 }
 
+// Server сервер хранилища
 type Server struct {
 	wg  *sync.WaitGroup
 	cs  *counters.Counters
@@ -43,6 +44,7 @@ type Server struct {
 	s iTaskStorage
 }
 
+// NewServer новый сервер хранилища
 func NewServer(ctx context.Context) (*Server, error) {
 	s := &Server{
 		wg:  &sync.WaitGroup{},

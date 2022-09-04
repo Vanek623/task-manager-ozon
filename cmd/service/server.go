@@ -39,6 +39,7 @@ type iService interface {
 	GetTask(ctx context.Context, data *models.GetTaskData) (*models.DetailedTask, error)
 }
 
+// Server сервер сервиса
 type Server struct {
 	cs  *counters.Counters
 	wg  *sync.WaitGroup
@@ -47,6 +48,7 @@ type Server struct {
 	s iService
 }
 
+// NewServer новый сервер сервиса
 func NewServer(ctx context.Context) (*Server, error) {
 	srv := &Server{
 		cs:  counters.New("task_service"),
@@ -129,6 +131,7 @@ func (s *Server) makeService(ctx context.Context, isStorageSync bool) error {
 	return nil
 }
 
+// MonitoringInterceptor интерцептор для мониторинга (трасировка и счетчики)
 func (s *Server) MonitoringInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	s.cs.Inc(counters.Incoming)
 
