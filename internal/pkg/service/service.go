@@ -23,6 +23,7 @@ type Service struct {
 	iService
 }
 
+// AddTask добавить задачу
 func (s *Service) AddTask(ctx context.Context, data *models.AddTaskData) (*uuid.UUID, error) {
 	if err := validation.IsTitleAndDescriptionOk(data.Title(), data.Description()); err != nil {
 		return nil, err
@@ -31,6 +32,7 @@ func (s *Service) AddTask(ctx context.Context, data *models.AddTaskData) (*uuid.
 	return s.iService.AddTask(ctx, data)
 }
 
+// UpdateTask обновить задачу
 func (s *Service) UpdateTask(ctx context.Context, data *models.UpdateTaskData) error {
 	if err := validation.IsTitleAndDescriptionOk(data.Title(), data.Description()); err != nil {
 		return err
