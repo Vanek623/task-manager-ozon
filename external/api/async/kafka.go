@@ -67,18 +67,25 @@ func (k *kafka) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.C
 				return nil
 			}
 
-			k.cs.Inc(counters.Incoming)
-
-			if err := k.handleMessage(session.Context(), msg); err != nil {
-				k.cs.Inc(counters.Fail)
+			if err := k.handleMessageWithMonitoring(session.Context(), msg); err != nil {
 				log.Error(err)
-			} else {
-				k.cs.Inc(counters.Success)
 			}
 
 			session.MarkMessage(msg, "")
 		}
 	}
+}
+
+func (k *kafka) handleMessageWithMonitoring(ctx context.Context, msg *sarama.ConsumerMessage) error {
+	k.cs.Inc(counters.Incoming)
+
+	if err := k.handleMessage(ctx, msg); err != nil {
+		k.cs.Inc(counters.Fail)
+		return err
+	}
+
+	k.cs.Inc(counters.Success)
+	return nil
 }
 
 func (k *kafka) handleMessage(ctx context.Context, msg *sarama.ConsumerMessage) error {

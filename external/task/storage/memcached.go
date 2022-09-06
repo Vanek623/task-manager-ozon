@@ -28,19 +28,7 @@ type memcached struct {
 }
 
 func (m *memcached) Add(ctx context.Context, t *models.Task) error {
-	if err := m.storage.Add(ctx, t); err != nil {
-		return err
-	}
-
-	if err := m.addToCache(t); err != nil {
-		log.Error(err)
-	}
-
-	if err := m.client.Delete(listKey); err != nil && !errors.Is(err, memcache.ErrCacheMiss) {
-		log.Error(err)
-	}
-
-	return nil
+	return m.storage.Add(ctx, t)
 }
 
 func (m *memcached) Delete(ctx context.Context, ID *uuid.UUID) error {
@@ -53,32 +41,15 @@ func (m *memcached) Delete(ctx context.Context, ID *uuid.UUID) error {
 		log.Error(err)
 	}
 
-	if err = m.client.Delete(listKey); err != nil && !errors.Is(err, memcache.ErrCacheMiss) {
-		log.Error(err)
-	}
-
 	return nil
 }
 
 func (m *memcached) Update(ctx context.Context, t *models.Task) error {
-	err := m.storage.Update(ctx, t)
-	if err != nil {
+	if err := m.storage.Update(ctx, t); err != nil {
 		return err
 	}
 
-	encoded, err := json.Marshal(t)
-	if err != nil {
-		log.Error(err)
-		return nil
-	}
-
-	err = m.client.Set(&memcache.Item{
-		Key:        t.ID.String(),
-		Value:      encoded,
-		Expiration: expiration,
-	})
-
-	if err != nil {
+	if err := m.client.Delete(t.ID.String()); err != nil && !errors.Is(err, memcache.ErrCacheMiss) {
 		log.Error(err)
 	}
 
@@ -177,7 +148,20 @@ func (m *memcached) Get(ctx context.Context, ID *uuid.UUID) (*models.Task, error
 			return nil, err
 		}
 
-		if err = m.addToCache(t); err != nil {
+		var encoded []byte
+		encoded, err = json.Marshal(t)
+		if err != nil {
+			log.Error(err)
+			return t, nil
+		}
+
+		err = m.client.Set(&memcache.Item{
+			Key:        t.ID.String(),
+			Value:      encoded,
+			Expiration: expiration,
+		})
+
+		if err != nil {
 			log.Error(err)
 		}
 	}
@@ -196,23 +180,4 @@ func newMemcached(host string, storage iTaskStorage, cs *counters.Counters) (*me
 		client:  client,
 		cs:      cs,
 	}, nil
-}
-
-func (m *memcached) addToCache(t *models.Task) error {
-	encoded, err := json.Marshal(t)
-	if err != nil {
-		return err
-	}
-
-	err = m.client.Set(&memcache.Item{
-		Key:        t.ID.String(),
-		Value:      encoded,
-		Expiration: expiration,
-	})
-
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
